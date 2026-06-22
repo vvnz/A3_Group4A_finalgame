@@ -124,6 +124,8 @@ function setup() {
 }
 
 function draw() {
+  background(0);
+
   if (gameState === STATE.START) {
     drawStartScreen();
   } else if (gameState === STATE.PLAYING) {
