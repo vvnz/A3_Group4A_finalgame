@@ -168,15 +168,14 @@ function loadLevel(index) {
 
 function drawLevel() {
   let level = LEVELS[currentLevel];
+  let c = level.backgroundColor;
+  background(c[0], c[1], c[2]);
 
   if (levelImages[currentLevel]) {
     push();
     imageMode(CORNER);
     image(levelImages[currentLevel], 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     pop();
-  } else {
-    let c = level.backgroundColor;
-    background(c[0], c[1], c[2]);
   }
 }
 
