@@ -42,8 +42,8 @@ const STATE = {
 };
 
 const SEASICK_MAX = 100;
-const SEASICK_RATE = 0.12;     // gain per frame while moving
-const SEASICK_DECAY = 0.04;    // loss per frame while still
+const SEASICK_RATE = 0.20;     // gain per frame while moving
+const SEASICK_DECAY = 0.005;   // loss per frame while still
 const FAINT_FLASHES = 6;       // total flash count before restart
 const FAINT_FLASH_FRAMES = 12; // frames per flash
 
