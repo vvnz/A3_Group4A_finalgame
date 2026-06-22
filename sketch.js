@@ -36,9 +36,16 @@ const PHYSICS = {
 const STATE = {
   START: "start",
   PLAYING: "playing",
+  FAINTING: "fainting",
   WIN: "win",
   LOSE: "lose",
 };
+
+const SEASICK_MAX = 100;
+const SEASICK_RATE = 0.20;     // gain per frame while moving
+const SEASICK_DECAY = 0.005;   // loss per frame while still
+const FAINT_FLASHES = 6;       // total flash count before restart
+const FAINT_FLASH_FRAMES = 12; // frames per flash
 
 const LEVELS = [
   {
@@ -89,6 +96,10 @@ let player = {
   isMoving: false,
   hw: 18,
   hh: 28,
+  seasickness: 0,
+  faintTimer: 0,
+  faintFlash: 0,
+  visible: true,
 };
 
 let characterSheet;
@@ -119,10 +130,17 @@ function draw() {
     drawLevel();
     drawPlatforms();
     handleInput();
+    updateSeasickness();
     resolveHorizontalCollisions();
     applyPhysics();
     clampToBounds();
     animateSprite();
+    drawCharacter();
+    drawHUD();
+  } else if (gameState === STATE.FAINTING) {
+    drawLevel();
+    drawPlatforms();
+    updateFainting();
     drawCharacter();
     drawHUD();
   } else if (gameState === STATE.WIN) {
@@ -142,6 +160,10 @@ function loadLevel(index) {
   player.currentFrame = 0;
   player.frameTimer = 0;
   player.isMoving = false;
+  player.seasickness = 0;
+  player.faintTimer = 0;
+  player.faintFlash = 0;
+  player.visible = true;
 }
 
 function drawLevel() {
@@ -174,6 +196,38 @@ function handleInput() {
   if (keyIsDown(87) && player.onGround) {
     player.vy = -PHYSICS.jumpStrength;
     player.onGround = false;
+  }
+}
+
+function updateSeasickness() {
+  if (player.isMoving) {
+    player.seasickness = min(player.seasickness + SEASICK_RATE, SEASICK_MAX);
+  } else {
+    player.seasickness = max(player.seasickness - SEASICK_DECAY, 0);
+  }
+
+  if (player.seasickness >= SEASICK_MAX) {
+    player.seasickness = SEASICK_MAX;
+    player.faintTimer = 0;
+    player.faintFlash = 0;
+    player.isMoving = false;
+    gameState = STATE.FAINTING;
+  }
+}
+
+function updateFainting() {
+  player.faintTimer++;
+
+  // toggle visibility every FAINT_FLASH_FRAMES frames
+  if (player.faintTimer % FAINT_FLASH_FRAMES === 0) {
+    player.visible = !player.visible;
+    player.faintFlash++;
+  }
+
+  if (player.faintFlash >= FAINT_FLASHES) {
+    player.visible = true;
+    loadLevel(currentLevel);
+    gameState = STATE.PLAYING;
   }
 }
 
@@ -279,6 +333,8 @@ function animateSprite() {
 }
 
 function drawCharacter() {
+  if (!player.visible) return;
+
   let row = SPRITE.rows[player.direction];
   let offset = SPRITE.offsets[player.direction];
 
@@ -302,11 +358,38 @@ function drawCharacter() {
 }
 
 function drawHUD() {
+  // level name
   noStroke();
   fill(255);
   textSize(16);
   textAlign(LEFT, TOP);
   text(LEVELS[currentLevel].name, 16, 16);
+
+  // seasickness meter
+  let meterX = CANVAS_WIDTH - 170;
+  let meterY = 16;
+  let meterW = 150;
+  let meterH = 18;
+  let fill_pct = player.seasickness / SEASICK_MAX;
+
+  // label
+  fill(255);
+  textSize(12);
+  textAlign(RIGHT, TOP);
+  text("SEASICKNESS", meterX - 4, meterY + 2);
+
+  // background bar
+  noFill();
+  stroke(255, 255, 255, 160);
+  strokeWeight(1);
+  rect(meterX, meterY, meterW, meterH, 4);
+
+  // filled portion — green → yellow → red
+  let r = map(fill_pct, 0, 1, 60, 230);
+  let g = map(fill_pct, 0, 1, 200, 60);
+  noStroke();
+  fill(r, g, 80);
+  rect(meterX + 1, meterY + 1, (meterW - 2) * fill_pct, meterH - 2, 3);
 }
 
 function drawStartScreen() {
