@@ -50,7 +50,7 @@ const FAINT_FLASH_FRAMES = 12; // frames per flash
 const LEVELS = [
   {
     name: "Level 1 — Learning",
-    background: "assets/images/level1.png",
+    background: "assets/images/lvl1background.png",
     backgroundColor: [38, 70, 110],
     start: { x: 40, y: 278 },
     platforms: [
@@ -358,10 +358,14 @@ function drawCharacter() {
 
 function drawHUD() {
   // level name
-  noStroke();
-  fill(255);
   textSize(16);
   textAlign(LEFT, TOP);
+  strokeWeight(3);
+  stroke(0);
+  fill(0);
+  text(LEVELS[currentLevel].name, 16, 16);
+  noStroke();
+  fill(255);
   text(LEVELS[currentLevel].name, 16, 16);
 
   // seasickness meter
@@ -371,16 +375,21 @@ function drawHUD() {
   let meterH = 18;
   let fill_pct = player.seasickness / SEASICK_MAX;
 
-  // label
-  fill(255);
+  // label — black outline, white fill
   textSize(12);
   textAlign(RIGHT, TOP);
+  strokeWeight(3);
+  stroke(0);
+  fill(0);
+  text("SEASICKNESS", meterX - 4, meterY + 2);
+  noStroke();
+  fill(255);
   text("SEASICKNESS", meterX - 4, meterY + 2);
 
   // background bar
   noFill();
-  stroke(255, 255, 255, 160);
-  strokeWeight(1);
+  stroke(0);
+  strokeWeight(3);
   rect(meterX, meterY, meterW, meterH, 4);
 
   // filled portion — green → yellow → red
