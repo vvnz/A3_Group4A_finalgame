@@ -100,8 +100,8 @@ const LEVELS = [
       { x: 250, y: 350, w: 300, h: 16 }, //spike platform
       { x: 546, y: 306, w: 16, h: 60 }, //vertical wall 1.2
       { x: 548, y: 306, w: 278, h: 16 }, //after spike platform
-      { x: 283, y: 430, w: 100, h: 16 }, //floating staircase 2
-      { x: 400, y: 490, w: 100, h: 16 }, //floating staircase 1
+      { x: 323, y: 430, w: 100, h: 16 }, //floating staircase 2
+      { x: 463, y: 490, w: 100, h: 16 }, //floating staircase 1
       { x: 850, y: 394, w: 16, h: 140 }, //vertical wall 3
       { x: 849, y: 390, w: 111, h: 16 }, //top of vertical wall 3
       { x: 0, y: 540, w: 270, h: 16 },
@@ -382,32 +382,6 @@ function drawIntroScreen() {
   animateSprite();
 
   drawCharacter();
-
-  // Logo overlay
-  push();
-  imageMode(CORNER);
-  let logoW = 235;
-  let logoH = logoW * (imgLogo.height / imgLogo.width);
-  image(imgLogo, 20, 20, logoW, logoH);
-  pop();
-
-  // Controls hint
-  let label = "A / D to move, W to jump.\nPress ENTER to start.";
-  push();
-  textFont("Verdana");
-  textStyle(BOLD);
-  textSize(18);
-  textLeading(24);
-  textAlign(LEFT, TOP);
-  let logoH2 = 235 * (imgLogo.height / imgLogo.width);
-  strokeWeight(4);
-  stroke(0);
-  fill(0);
-  text(label, 20, 20 + logoH2 + 14);
-  noStroke();
-  fill(255);
-  text(label, 20, 20 + logoH2 + 14);
-  pop();
 }
 
 function draw() {
@@ -421,9 +395,13 @@ function draw() {
     drawSpikes();
     drawLantern();
     drawDoors();
-    handleInput();
+    updateLantern();
+    if (darkMode) {
+      player.isMoving = false;
+    } else {
+      handleInput();
+    }
     drawDarknessOverlay();
-    blockMovementIfDark(); // do NOT return
     if (winDelayTimer > 0) {
       winDelayTimer--;
       if (winDelayTimer === 0) gameState = STATE.WIN;
@@ -523,7 +501,9 @@ function handleInput() {
 }
 
 function updateSeasickness() {
-  if (player.isMoving) {
+  if (darkMode) {
+    player.seasickness = max(player.seasickness - SEASICK_RATE, 0);
+  } else if (player.isMoving) {
     player.seasickness = min(player.seasickness + SEASICK_RATE, SEASICK_MAX);
   } else {
     player.seasickness = max(player.seasickness - SEASICK_DECAY, 0);
@@ -922,7 +902,6 @@ function keyPressed() {
     }
   } else if (gameState === STATE.PLAYING) {
     if (keyCode === 69) {
-      handleLanternInteraction(); // ← FIX
       let level = LEVELS[currentLevel];
       if (level.exitDoor) {
         let ex = level.exitDoor.x + DOOR_W / 2;

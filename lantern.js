@@ -32,29 +32,20 @@ function drawLantern() {
       strokeWeight(3);
       stroke(0);
       fill(0);
-      text("Press E to rest", LANTERN.x, LANTERN.y - LANTERN.h / 2 - 10);
+      text("Hold E to rest", LANTERN.x, LANTERN.y - LANTERN.h / 2 - 10);
       noStroke();
       fill(255);
-      text("Press E to rest", LANTERN.x, LANTERN.y - LANTERN.h / 2 - 10);
+      text("Hold E to rest", LANTERN.x, LANTERN.y - LANTERN.h / 2 - 10);
       pop();
     }
   }
 }
 
-// Toggle darkness when pressing E near lantern
-function handleLanternInteraction() {
-  if (keyIsDown(69)) {
-    // E key
-    if (!darkMode) {
-      // Only allow entering dark mode if close enough
-      if (abs(player.x - LANTERN.x) < 60 && abs(player.y - LANTERN.y) < 80) {
-        darkMode = true;
-      }
-    } else {
-      // Already dark → pressing E again turns lights back on
-      darkMode = false;
-    }
-  }
+// Darkness is active only while E is held down near the lantern
+function updateLantern() {
+  let near =
+    abs(player.x - LANTERN.x) < 60 && abs(player.y - LANTERN.y) < 80;
+  darkMode = keyIsDown(69) && near;
 }
 
 // Draw full‑screen darkness overlay
