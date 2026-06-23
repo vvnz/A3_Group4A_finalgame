@@ -115,6 +115,8 @@ let player = {
 
 let characterSheet;
 let levelImages = [];
+let imgIntroBg;
+let imgLogo;
 let imgDoorClosed;
 let imgDoorOpen;
 let exitDoorOpen = false;
@@ -123,6 +125,8 @@ const WIN_DELAY_FRAMES = 90; // 2 seconds at 60fps
 
 function preload() {
   characterSheet = loadImage("assets/images/spritesheet.png");
+  imgIntroBg = loadImage("assets/images/backround_intro.PNG");
+  imgLogo = loadImage("assets/images/sealegs_logo.png");
   imgDoorClosed = loadImage("assets/images/doorclose.png");
   imgDoorOpen = loadImage("assets/images/dooropen.png");
 
@@ -507,21 +511,31 @@ function drawHUD() {
 }
 
 function drawStartScreen() {
-  background(15, 25, 40);
+  push();
+  imageMode(CORNER);
+  image(imgIntroBg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  fill(255, 220, 120);
-  textAlign(CENTER, CENTER);
-  textSize(64);
-  text("SEALEGS", width / 2, height / 2 - 80);
+  let logoX = 20;
+  let logoY = 20;
+  let logoW = 235;
+  let logoH = logoW * (imgLogo.height / imgLogo.width);
+  image(imgLogo, logoX, logoY, logoW, logoH);
 
-  fill(220);
-  textSize(20);
-  text("Earn your sealegs.", width / 2, height / 2 - 20);
-
-  fill(180);
-  textSize(16);
-  text("A / D to move, W to jump", width / 2, height / 2 + 40);
-  text("Press ENTER to start", width / 2, height / 2 + 70);
+  let label = "A / D to move, W to jump.\nPress ENTER to start.";
+  let labelY = logoY + logoH + 14;
+  textFont("Verdana");
+  textStyle(BOLD);
+  textSize(18);
+  textLeading(24);
+  textAlign(LEFT, TOP);
+  strokeWeight(4);
+  stroke(0);
+  fill(0);
+  text(label, logoX, labelY);
+  noStroke();
+  fill(255);
+  text(label, logoX, labelY);
+  pop();
 }
 
 function drawWinScreen() {
