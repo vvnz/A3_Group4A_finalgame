@@ -45,6 +45,10 @@ const STATE = {
 const DOOR_W = 55;
 const DOOR_H = 90;
 
+// spike hazard dimensions
+const SPIKE_W = 16;
+const SPIKE_H = 16;
+
 const SEASICK_MAX = 100;
 const SEASICK_RATE = 0.15; // gain per frame while moving
 const SEASICK_DECAY = 0.005; // loss per frame while still
@@ -62,12 +66,13 @@ const LEVELS = [
       { x: 344, y: 250, w: 110, h: 16 },
       { x: 273, y: 350, w: 281, h: 16 },
       { x: 548, y: 306, w: 278, h: 16 },
-      { x: 293, y: 430, w: 100, h: 16 },
-      { x: 445, y: 460, w: 100, h: 16 },
+      { x: 293, y: 460, w: 100, h: 16 },
+      { x: 445, y: 490, w: 100, h: 16 },
       { x: 849, y: 450, w: 111, h: 16 },
-      { x: 0, y: 510, w: 270, h: 16 },
-      { x: 577, y: 499, w: 292, h: 16 },
+      { x: 0, y: 540, w: 270, h: 16 },
+      { x: 577, y: 529, w: 292, h: 16 },
     ],
+    spikes: [{ x: 273, y: 350, w: 281 }],
     spawnDoor: { x: 13, y: 216 },
     exitDoor: { x: CANVAS_WIDTH - DOOR_W, y: CANVAS_HEIGHT - DOOR_H },
   },
@@ -144,6 +149,7 @@ function draw() {
   } else if (gameState === STATE.PLAYING) {
     drawLevel();
     drawPlatforms();
+    drawSpikes();
     drawDoors();
     handleInput();
     if (winDelayTimer > 0) {
@@ -154,12 +160,14 @@ function draw() {
     resolveHorizontalCollisions();
     applyPhysics();
     clampToBounds();
+    checkSpikeCollision();
     animateSprite();
     drawCharacter();
     drawHUD();
   } else if (gameState === STATE.FAINTING) {
     drawLevel();
     drawPlatforms();
+    drawSpikes();
     drawDoors();
     updateFainting();
     drawCharacter();
@@ -230,10 +238,34 @@ function updateSeasickness() {
 
   if (player.seasickness >= SEASICK_MAX) {
     player.seasickness = SEASICK_MAX;
-    player.faintTimer = 0;
-    player.faintFlash = 0;
-    player.isMoving = false;
-    gameState = STATE.FAINTING;
+    triggerFaint();
+  }
+}
+
+function triggerFaint() {
+  player.faintTimer = 0;
+  player.faintFlash = 0;
+  player.isMoving = false;
+  gameState = STATE.FAINTING;
+}
+
+function checkSpikeCollision() {
+  let spikes = LEVELS[currentLevel].spikes || [];
+  for (let i = 0; i < spikes.length; i++) {
+    let s = spikes[i];
+    let left = s.x;
+    let right = s.x + s.w;
+    let top = s.y - SPIKE_H;
+    let bottom = s.y;
+    if (
+      player.x + player.hw > left &&
+      player.x - player.hw < right &&
+      player.y + player.hh > top &&
+      player.y - player.hh < bottom
+    ) {
+      triggerFaint();
+      return;
+    }
   }
 }
 
@@ -329,6 +361,24 @@ function drawPlatforms() {
   for (let i = 0; i < platforms.length; i++) {
     let p = platforms[i];
     rect(p.x, p.y, p.w, p.h);
+  }
+  pop();
+}
+
+function drawSpikes() {
+  let spikes = LEVELS[currentLevel].spikes || [];
+  push();
+  rectMode(CORNER);
+  fill(150);
+  stroke(90);
+  strokeWeight(1);
+  for (let i = 0; i < spikes.length; i++) {
+    let s = spikes[i];
+    let count = floor(s.w / SPIKE_W);
+    for (let j = 0; j < count; j++) {
+      let lx = s.x + j * SPIKE_W;
+      triangle(lx, s.y, lx + SPIKE_W, s.y, lx + SPIKE_W / 2, s.y - SPIKE_H);
+    }
   }
   pop();
 }
