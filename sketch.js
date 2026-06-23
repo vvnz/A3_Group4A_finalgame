@@ -52,6 +52,10 @@ const DOOR_H = 90;
 const SPIKE_W = 16;
 const SPIKE_H = 16;
 
+// rat enemy
+const RAT_SPEED = 2.4; // patrol speed in pixels per frame — adjust to taste
+const RAT_SIZE = 48; // display size on canvas
+
 const SEASICK_MAX = 100;
 const SEASICK_RATE = 0.15; // gain per frame while moving
 const SEASICK_DECAY = 0.005; // loss per frame while still
@@ -103,8 +107,10 @@ const LEVELS = [
       { x: 0, y: 540, w: 270, h: 16 },
       { x: 577, y: 529, w: 292, h: 16 }, //floating staircase 1
       { x: 0, y: CANVAS_HEIGHT - 16, w: CANVAS_WIDTH, h: 16 },
+      { x: 488, y: CANVAS_HEIGHT - 16 - 44, w: 40, h: 44, barrel: true },
     ],
     spikes: [{ x: 254, y: 350, w: 295 }],
+    rat: { minX: 270, maxX: 455 },
     spawnDoor: { x: 13, y: 228 },
     exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
   },
@@ -145,10 +151,14 @@ let player = {
   visible: true,
 };
 
+let rat = { x: 0, dir: 1, active: false };
+
 let characterSheet;
 let levelImages = [];
 let imgIntroBg;
 let imgLogo;
+let imgRat;
+let imgBarrel;
 let imgDoorClosed;
 let imgDoorOpen;
 let imgHammock;
@@ -163,6 +173,8 @@ function preload() {
   characterSheet = loadImage("assets/images/spritesheet.png");
   imgIntroBg = loadImage("assets/images/backround_intro.PNG");
   imgLogo = loadImage("assets/images/sealegs_logo.png");
+  imgRat = loadImage("assets/images/rat.png");
+  imgBarrel = loadImage("assets/images/barrel.png");
   imgDoorClosed = loadImage("assets/images/doorclose.png");
   imgDoorOpen = loadImage("assets/images/dooropen.png");
   imgHammock = loadImage("assets/images/hammock.png");
@@ -418,6 +430,9 @@ function draw() {
     applyPhysics();
     clampToBounds();
     checkSpikeCollision();
+    updateRat();
+    checkRatCollision();
+    drawRat();
     animateSprite();
     drawCharacter();
     drawHUD();
@@ -426,6 +441,7 @@ function draw() {
     drawPlatforms();
     drawSpikes();
     drawDoors();
+    drawRat();
     updateFainting();
     drawCharacter();
     drawHUD();
@@ -450,6 +466,16 @@ function loadLevel(index) {
   player.faintTimer = 0;
   player.faintFlash = 0;
   player.visible = true;
+
+  let ratData = LEVELS[index].rat;
+  if (ratData) {
+    rat.active = true;
+    rat.x = ratData.minX;
+    rat.dir = 1;
+  } else {
+    rat.active = false;
+  }
+
   exitDoorOpen = false;
   winDelayTimer = 0;
 }
@@ -504,6 +530,51 @@ function triggerFaint() {
   player.faintFlash = 0;
   player.isMoving = false;
   gameState = STATE.FAINTING;
+}
+
+function updateRat() {
+  if (!rat.active) return;
+  let ratData = LEVELS[currentLevel].rat;
+
+  rat.x += RAT_SPEED * rat.dir;
+
+  if (rat.x >= ratData.maxX) {
+    rat.x = ratData.maxX;
+    rat.dir = -1;
+  } else if (rat.x <= ratData.minX) {
+    rat.x = ratData.minX;
+    rat.dir = 1;
+  }
+}
+
+function drawRat() {
+  if (!rat.active) return;
+
+  let ratY = CANVAS_HEIGHT - 16 - RAT_SIZE / 2;
+  push();
+  imageMode(CENTER);
+  translate(rat.x, ratY);
+  // image faces left by default — flip horizontally when moving right
+  if (rat.dir === 1) scale(-1, 1);
+  image(imgRat, 0, 0, RAT_SIZE, RAT_SIZE);
+  pop();
+}
+
+function checkRatCollision() {
+  if (!rat.active) return;
+
+  let ratHalf = RAT_SIZE / 2;
+  let ratCx = rat.x;
+  let ratCy = CANVAS_HEIGHT - 16 - ratHalf;
+
+  if (
+    player.x + player.hw > ratCx - ratHalf &&
+    player.x - player.hw < ratCx + ratHalf &&
+    player.y + player.hh > ratCy - ratHalf &&
+    player.y - player.hh < ratCy + ratHalf
+  ) {
+    triggerFaint();
+  }
 }
 
 function checkSpikeCollision() {
@@ -612,12 +683,17 @@ function drawPlatforms() {
   let platforms = LEVELS[currentLevel].platforms || [];
   push();
   rectMode(CORNER);
-  fill(101, 67, 33);
-  stroke(60, 35, 10);
-  strokeWeight(2);
+  imageMode(CORNER);
   for (let i = 0; i < platforms.length; i++) {
     let p = platforms[i];
-    rect(p.x, p.y, p.w, p.h);
+    if (p.barrel) {
+      image(imgBarrel, p.x, p.y, p.w, p.h);
+    } else {
+      fill(101, 67, 33);
+      stroke(60, 35, 10);
+      strokeWeight(2);
+      rect(p.x, p.y, p.w, p.h);
+    }
   }
   pop();
 }
