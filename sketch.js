@@ -4,6 +4,9 @@
 // [DETAILS]
 // ============================================================
 
+// Set to false once hitbox positions look right
+const DEBUG_HITBOXES = true;
+
 const SPRITE = {
   frameWidth: 171,
   frameHeight: 257,
@@ -54,6 +57,31 @@ const SEASICK_RATE = 0.15; // gain per frame while moving
 const SEASICK_DECAY = 0.005; // loss per frame while still
 const FAINT_FLASHES = 6; // total flash count before restart
 const FAINT_FLASH_FRAMES = 12; // frames per flash
+
+// ── Intro / start-screen ship scene ────────────────────────────────────────
+const INTRO = {
+  // The deck platform the player stands on (drawn as brown rect)
+  platform: { x: 510, y: 460, w: 250, h: 20 },
+
+  // Outer-shell walls — stepped rectangles tracing the curved hull left edge.
+  walls: [
+    { x: 450, y: 312, w: 14, h: 52 }, // top of curved bow
+    { x: 464, y: 364, w: 18, h: 50 },
+    { x: 482, y: 414, w: 22, h: 50 },
+    { x: 504, y: 464, w: 26, h: 50 },
+    { x: 530, y: 514, w: 30, h: 86 }, // bottom-left curve
+  ],
+
+  // Decorations — positioned on the deck inside the hull boundary
+  hammock: { x: 540, y: 380, w: 140, h: 75 },
+  parrot: { x: 590, y: 380, w: 48, h: 48 },
+
+  // Door at the bottom-right; press E near it to enter Level 1
+  door: { x: CANVAS_WIDTH - DOOR_W - 8, y: CANVAS_HEIGHT - DOOR_H - 8 },
+
+  // Player spawns just above the deck
+  playerStart: { x: 580, y: 380 },
+};
 
 const LEVELS = [
   {
@@ -119,8 +147,12 @@ let imgIntroBg;
 let imgLogo;
 let imgDoorClosed;
 let imgDoorOpen;
+let imgHammock;
+let imgParrot;
 let exitDoorOpen = false;
+let introDoorOpen = false;
 let winDelayTimer = 0;
+let introDelayTimer = 0;
 const WIN_DELAY_FRAMES = 90; // 2 seconds at 60fps
 
 function preload() {
@@ -129,6 +161,8 @@ function preload() {
   imgLogo = loadImage("assets/images/sealegs_logo.png");
   imgDoorClosed = loadImage("assets/images/doorclose.png");
   imgDoorOpen = loadImage("assets/images/dooropen.png");
+  imgHammock = loadImage("assets/images/hammock.png");
+  imgParrot = loadImage("assets/images/parrot.png");
 
   for (let i = 0; i < LEVELS.length; i++) {
     if (LEVELS[i].background) {
@@ -143,13 +177,204 @@ function setup() {
   createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   imageMode(CENTER);
   textFont("monospace");
+  initIntroPlayer();
+}
+
+// ── Intro scene helpers ─────────────────────────────────────────────────────
+
+function initIntroPlayer() {
+  player.x = INTRO.playerStart.x;
+  player.y = INTRO.playerStart.y;
+  player.vy = 0;
+  player.onGround = false;
+  player.direction = "right";
+  player.currentFrame = 0;
+  player.frameTimer = 0;
+  player.isMoving = false;
+  player.seasickness = 0;
+  player.faintTimer = 0;
+  player.faintFlash = 0;
+  player.visible = true;
+  introDoorOpen = false;
+  introDelayTimer = 0;
+}
+
+function getIntroColliders() {
+  return [INTRO.platform, ...INTRO.walls];
+}
+
+function resolveIntroCollisions() {
+  let colliders = getIntroColliders();
+  for (let p of colliders) {
+    let withinY = player.y + player.hh > p.y && player.y - player.hh < p.y + p.h;
+    if (!withinY) continue;
+
+    let pl = player.x - player.hw;
+    let pr = player.x + player.hw;
+    let bl = p.x;
+    let br = p.x + p.w;
+
+    if (pr > bl && pl < br) {
+      let pushLeft = pr - bl;
+      let pushRight = br - pl;
+      if (pushLeft < pushRight) {
+        player.x -= pushLeft;
+      } else {
+        player.x += pushRight;
+      }
+    }
+  }
+}
+
+function applyIntroPhysics() {
+  player.vy += PHYSICS.gravity;
+  player.vy = constrain(player.vy, -PHYSICS.jumpStrength, PHYSICS.maxFallSpeed);
+
+  let prevBottom = player.y + player.hh;
+  let prevTop = player.y - player.hh;
+  player.y += player.vy;
+  player.onGround = false;
+
+  let colliders = getIntroColliders();
+  for (let p of colliders) {
+    let withinX = player.x + player.hw > p.x && player.x - player.hw < p.x + p.w;
+    if (!withinX) continue;
+
+    let top = p.y;
+    let bottom = p.y + p.h;
+
+    if (player.vy >= 0 && prevBottom <= top && player.y + player.hh >= top) {
+      player.y = top - player.hh;
+      player.vy = 0;
+      player.onGround = true;
+    } else if (player.vy < 0 && prevTop >= bottom && player.y - player.hh <= bottom) {
+      player.y = bottom + player.hh;
+      player.vy = 0;
+    }
+  }
+
+  // Canvas floor
+  let groundY = CANVAS_HEIGHT - player.hh;
+  if (player.y >= groundY) {
+    player.y = groundY;
+    player.vy = 0;
+    player.onGround = true;
+  }
+}
+
+function drawIntroScreen() {
+  // Background
+  push();
+  imageMode(CORNER);
+  image(imgIntroBg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  pop();
+
+  // Decorations (behind player)
+  push();
+  imageMode(CORNER);
+  image(imgHammock, INTRO.hammock.x, INTRO.hammock.y, INTRO.hammock.w, INTRO.hammock.h);
+  image(imgParrot,  INTRO.parrot.x,  INTRO.parrot.y,  INTRO.parrot.w,  INTRO.parrot.h);
+  pop();
+
+  // Brown platform (always visible)
+  push();
+  rectMode(CORNER);
+  fill(101, 67, 33);
+  stroke(60, 35, 10);
+  strokeWeight(2);
+  let dp = INTRO.platform;
+  rect(dp.x, dp.y, dp.w, dp.h);
+  pop();
+
+  // Debug: hull outer-shell wall outlines only (no player box)
+  if (DEBUG_HITBOXES) {
+    push();
+    rectMode(CORNER);
+    noFill();
+    stroke(255, 0, 0);
+    strokeWeight(2);
+    // platform outline
+    rect(dp.x, dp.y, dp.w, dp.h);
+    // hull walls
+    for (let w of INTRO.walls) {
+      rect(w.x, w.y, w.w, w.h);
+    }
+    pop();
+  }
+
+  // Door — opens when E is pressed
+  push();
+  imageMode(CORNER);
+  image(introDoorOpen ? imgDoorOpen : imgDoorClosed, INTRO.door.x, INTRO.door.y, DOOR_W, DOOR_H);
+  pop();
+
+  // "Press E" label above door (only when door is closed)
+  if (!introDoorOpen) {
+    let labelX = INTRO.door.x + DOOR_W / 2;
+    let labelY = INTRO.door.y - 12;
+    push();
+    textSize(11);
+    textAlign(CENTER, BOTTOM);
+    strokeWeight(3);
+    stroke(0);
+    fill(0);
+    text("Press E to enter", labelX, labelY);
+    noStroke();
+    fill(255);
+    text("Press E to enter", labelX, labelY);
+    pop();
+  }
+
+  // Handle intro door delay timer
+  if (introDelayTimer > 0) {
+    introDelayTimer--;
+    if (introDelayTimer === 0) {
+      loadLevel(0);
+      gameState = STATE.PLAYING;
+    }
+  }
+
+  // Player physics (runs every frame in STATE.START)
+  handleInput();
+  resolveIntroCollisions();
+  applyIntroPhysics();
+  clampToBounds();
+  animateSprite();
+
+  drawCharacter();
+
+  // Logo overlay
+  push();
+  imageMode(CORNER);
+  let logoW = 235;
+  let logoH = logoW * (imgLogo.height / imgLogo.width);
+  image(imgLogo, 20, 20, logoW, logoH);
+  pop();
+
+  // Controls hint
+  let label = "A / D to move, W to jump.\nPress ENTER to start.";
+  push();
+  textFont("Verdana");
+  textStyle(BOLD);
+  textSize(18);
+  textLeading(24);
+  textAlign(LEFT, TOP);
+  let logoH2 = 235 * (imgLogo.height / imgLogo.width);
+  strokeWeight(4);
+  stroke(0);
+  fill(0);
+  text(label, 20, 20 + logoH2 + 14);
+  noStroke();
+  fill(255);
+  text(label, 20, 20 + logoH2 + 14);
+  pop();
 }
 
 function draw() {
   background(0);
 
   if (gameState === STATE.START) {
-    drawStartScreen();
+    drawIntroScreen();
   } else if (gameState === STATE.PLAYING) {
     drawLevel();
     drawPlatforms();
@@ -572,6 +797,15 @@ function keyPressed() {
       loadLevel(0);
       gameState = STATE.PLAYING;
     }
+    // E = enter door if player is close enough (with delay animation)
+    if (keyCode === 69) {
+      let dx = INTRO.door.x + DOOR_W / 2;
+      let dy = INTRO.door.y + DOOR_H / 2;
+      if (abs(player.x - dx) < 60 && abs(player.y - dy) < 80) {
+        introDoorOpen = true;
+        introDelayTimer = WIN_DELAY_FRAMES;
+      }
+    }
   } else if (gameState === STATE.PLAYING) {
     if (keyCode === 69) {
       // E — interact with exit door
@@ -597,6 +831,7 @@ function keyPressed() {
     }
   } else if (gameState === STATE.WIN) {
     if (keyCode === ENTER) {
+      initIntroPlayer();
       gameState = STATE.START;
     }
   } else if (gameState === STATE.LOSE) {
@@ -605,6 +840,7 @@ function keyPressed() {
       gameState = STATE.PLAYING;
     }
     if (keyCode === ENTER) {
+      initIntroPlayer();
       gameState = STATE.START;
     }
   }
