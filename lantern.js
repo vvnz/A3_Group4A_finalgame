@@ -4,9 +4,9 @@
 
 // Simple lantern placeholder (replace with image later)
 const LANTERN = {
-  x: 400, // adjust per level
-  y: 300,
-  w: 40,
+  x: 890, // adjust per level
+  y: 320,
+  w: 30,
   h: 60,
 };
 
