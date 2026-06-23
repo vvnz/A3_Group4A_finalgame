@@ -210,7 +210,8 @@ function getIntroColliders() {
 function resolveIntroCollisions() {
   let colliders = getIntroColliders();
   for (let p of colliders) {
-    let withinY = player.y + player.hh > p.y && player.y - player.hh < p.y + p.h;
+    let withinY =
+      player.y + player.hh > p.y && player.y - player.hh < p.y + p.h;
     if (!withinY) continue;
 
     let pl = player.x - player.hw;
@@ -241,7 +242,8 @@ function applyIntroPhysics() {
 
   let colliders = getIntroColliders();
   for (let p of colliders) {
-    let withinX = player.x + player.hw > p.x && player.x - player.hw < p.x + p.w;
+    let withinX =
+      player.x + player.hw > p.x && player.x - player.hw < p.x + p.w;
     if (!withinX) continue;
 
     let top = p.y;
@@ -251,7 +253,11 @@ function applyIntroPhysics() {
       player.y = top - player.hh;
       player.vy = 0;
       player.onGround = true;
-    } else if (player.vy < 0 && prevTop >= bottom && player.y - player.hh <= bottom) {
+    } else if (
+      player.vy < 0 &&
+      prevTop >= bottom &&
+      player.y - player.hh <= bottom
+    ) {
       player.y = bottom + player.hh;
       player.vy = 0;
     }
@@ -276,8 +282,20 @@ function drawIntroScreen() {
   // Decorations (behind player)
   push();
   imageMode(CORNER);
-  image(imgHammock, INTRO.hammock.x, INTRO.hammock.y, INTRO.hammock.w, INTRO.hammock.h);
-  image(imgParrot,  INTRO.parrot.x,  INTRO.parrot.y,  INTRO.parrot.w,  INTRO.parrot.h);
+  image(
+    imgHammock,
+    INTRO.hammock.x,
+    INTRO.hammock.y,
+    INTRO.hammock.w,
+    INTRO.hammock.h,
+  );
+  image(
+    imgParrot,
+    INTRO.parrot.x,
+    INTRO.parrot.y,
+    INTRO.parrot.w,
+    INTRO.parrot.h,
+  );
   pop();
 
   // Brown platform (always visible)
@@ -309,7 +327,13 @@ function drawIntroScreen() {
   // Door — opens when E is pressed
   push();
   imageMode(CORNER);
-  image(introDoorOpen ? imgDoorOpen : imgDoorClosed, INTRO.door.x, INTRO.door.y, DOOR_W, DOOR_H);
+  image(
+    introDoorOpen ? imgDoorOpen : imgDoorClosed,
+    INTRO.door.x,
+    INTRO.door.y,
+    DOOR_W,
+    DOOR_H,
+  );
   pop();
 
   // "Press E" label above door (only when door is closed)
