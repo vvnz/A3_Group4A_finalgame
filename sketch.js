@@ -100,8 +100,8 @@ const LEVELS = [
       { x: 250, y: 350, w: 300, h: 16 }, //spike platform
       { x: 546, y: 306, w: 16, h: 60 }, //vertical wall 1.2
       { x: 548, y: 306, w: 278, h: 16 }, //after spike platform
-      { x: 283, y: 430, w: 100, h: 16 }, //floating staircase 2
-      { x: 400, y: 490, w: 100, h: 16 }, //floating staircase 1
+      { x: 443, y: 430, w: 100, h: 16 }, //floating staircase 2
+      { x: 560, y: 490, w: 100, h: 16 }, //floating staircase 1
       { x: 850, y: 394, w: 16, h: 140 }, //vertical wall 3
       { x: 849, y: 390, w: 111, h: 16 }, //top of vertical wall 3
       { x: 0, y: 540, w: 270, h: 16 },
