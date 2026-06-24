@@ -10,6 +10,7 @@ unstable sensory conditions.
 
 ## Setup and Interaction Instructions
 
+hi
 To run the sketch locally, open `index.html` in Google Chrome using Live Server.
 
 **Controls:**
@@ -29,18 +30,18 @@ The console will show any errors in your sketch.
 
 ## Project Structure
 
-| File / Folder           | Purpose                                  |
-| ----------------------- | ---------------------------------------- |
-| `index.html`            | Page that loads p5.js and the sketch     |
-| `style.css`             | Centres the canvas on the page           |
-| `sketch.js`             | Game loop, screens, levels, movement     |
-| `assets/images/`        | Sprite sheets and level backgrounds      |
-| `assets/sounds/`        | Sound effects (cannon, coin, etc.)       |
+| File / Folder    | Purpose                              |
+| ---------------- | ------------------------------------ |
+| `index.html`     | Page that loads p5.js and the sketch |
+| `style.css`      | Centres the canvas on the page       |
+| `sketch.js`      | Game loop, screens, levels, movement |
+| `assets/images/` | Sprite sheets and level backgrounds  |
+| `assets/sounds/` | Sound effects (cannon, coin, etc.)   |
 
 ## Assets
 
-| File                          | Source       |
-| ----------------------------- | ------------ |
+| File                            | Source       |
+| ------------------------------- | ------------ |
 | `assets/images/spritesheet.png` | [SOURCE] [1] |
 
 ## References
