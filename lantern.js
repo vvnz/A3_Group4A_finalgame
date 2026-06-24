@@ -2,50 +2,53 @@
 // Lantern Darkness Mechanic
 // ============================================================
 
-// Simple lantern placeholder (replace with image later)
-const LANTERN = {
-  x: 890, // adjust per level
-  y: 320,
-  w: 30,
-  h: 60,
+// Lanterns by level (x, y, w, h)
+const LANTERNS = {
+  0: [
+    // Level 1
+    { x: 915, y: 360, w: 20, h: 45 },
+    { x: 55, y: 498 - 20, w: 20, h: 45 },
+  ],
+  1: [], // Level 2
+  2: [], // Level 3
 };
 
 // Whether the screen is currently dark
 let darkMode = false;
 
-// Draw the lantern placeholder
+// Draw all lanterns for current level
 function drawLantern() {
+  let lanterns = LANTERNS[currentLevel] || [];
+
   push();
-  rectMode(CENTER);
-  fill(255, 220, 120);
-  stroke(180, 140, 60);
-  strokeWeight(3);
-  rect(LANTERN.x, LANTERN.y, LANTERN.w, LANTERN.h);
+  for (let lantern of lanterns) {
+    image(imgLantern, lantern.x, lantern.y, lantern.w, lantern.h);
+  }
   pop();
 
-  // Interaction label
+  // Interaction prompts
   if (!darkMode) {
-    if (abs(player.x - LANTERN.x) < 60 && abs(player.y - LANTERN.y) < 80) {
-      push();
-      textSize(12);
-      textAlign(CENTER, BOTTOM);
-      strokeWeight(3);
-      stroke(0);
-      fill(0);
-      text("Hold E to rest", LANTERN.x, LANTERN.y - LANTERN.h / 2 - 10);
-      noStroke();
-      fill(255);
-      text("Hold E to rest", LANTERN.x, LANTERN.y - LANTERN.h / 2 - 10);
-      pop();
+    for (let lantern of lanterns) {
+      if (abs(player.x - lantern.x) < 60 && abs(player.y - lantern.y) < 80) {
+        drawInteractionPrompt(lantern.x, lantern.y - lantern.h / 2 - 20);
+      }
     }
   }
 }
 
-// Darkness is active only while E is held down near the lantern
+// Darkness is active only while E is held down near any lantern
 function updateLantern() {
-  let near =
-    abs(player.x - LANTERN.x) < 60 && abs(player.y - LANTERN.y) < 80;
-  darkMode = keyIsDown(69) && near;
+  let lanterns = LANTERNS[currentLevel] || [];
+  let nearAnyLantern = false;
+
+  for (let lantern of lanterns) {
+    if (abs(player.x - lantern.x) < 60 && abs(player.y - lantern.y) < 80) {
+      nearAnyLantern = true;
+      break;
+    }
+  }
+
+  darkMode = keyIsDown(69) && nearAnyLantern;
 }
 
 // Draw full‑screen darkness overlay
