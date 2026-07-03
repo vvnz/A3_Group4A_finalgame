@@ -79,10 +79,21 @@ function updateCamera() {
 }
 
 function beginCameraView() {
+  // Seasickness sway — a gentle wobble layered on top of the followed
+  // position at render time only, so it doesn't feed back into the
+  // camera's own follow/lerp state.
+  let wobbleX = 0;
+  let wobbleY = 0;
+  let tier = getSeasickTier();
+  if (tier) {
+    wobbleX = sin(frameCount * tier.wobbleFreq) * tier.wobbleAmp;
+    wobbleY = cos(frameCount * tier.wobbleFreq * 0.8) * tier.wobbleAmp * 0.6;
+  }
+
   push();
   translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
   scale(CAMERA.zoom);
-  translate(-camera.x, -camera.y);
+  translate(-(camera.x + wobbleX), -(camera.y + wobbleY));
 }
 
 function endCameraView() {
@@ -114,6 +125,20 @@ const SEASICK_RATE = 0.3; // gain per frame while moving
 const SEASICK_DECAY = 0.005; // loss per frame while still
 const FAINT_FLASHES = 6; // total flash count before restart
 const FAINT_FLASH_FRAMES = 12; // frames per flash
+
+// Seasickness effects — past these thresholds the player moves sluggishly
+// and the camera sways a little, growing worse as the meter fills further.
+const SEASICK_LAG_TIER1 = SEASICK_MAX / 3;
+const SEASICK_LAG_TIER2 = (SEASICK_MAX * 2) / 3;
+const SEASICK_LAG_TIERS = [
+  { threshold: SEASICK_LAG_TIER2, speedMultiplier: 0.7, wobbleAmp: 3, wobbleFreq: 0.22 }, // 2/3 full
+  { threshold: SEASICK_LAG_TIER1, speedMultiplier: 0.9, wobbleAmp: 1.5, wobbleFreq: 0.16 }, // 1/3 full
+];
+
+// Returns the active tier config for the player's current seasickness, or null.
+function getSeasickTier() {
+  return SEASICK_LAG_TIERS.find((t) => player.seasickness >= t.threshold) || null;
+}
 
 // ── Intro / start-screen ship scene ────────────────────────────────────────
 const INTRO = {
@@ -616,13 +641,16 @@ function drawLevel() {
 function handleInput() {
   player.isMoving = false;
 
+  let tier = getSeasickTier();
+  let speed = player.speed * (tier ? tier.speedMultiplier : 1);
+
   if (keyIsDown(65)) {
-    player.x -= player.speed;
+    player.x -= speed;
     player.direction = "left";
     player.isMoving = true;
   }
   if (keyIsDown(68)) {
-    player.x += player.speed;
+    player.x += speed;
     player.direction = "right";
     player.isMoving = true;
   }
@@ -993,6 +1021,19 @@ function drawHUD() {
   noStroke();
   fill(r, g, 80);
   rect(meterX + 1, meterY + 1, (meterW - 2) * fill_pct, meterH - 2, 3);
+
+  // tier markers — where the sprite starts jolting (1/3 and 2/3 full)
+  let m1x = meterX + meterW * (SEASICK_LAG_TIER1 / SEASICK_MAX);
+  let m2x = meterX + meterW * (SEASICK_LAG_TIER2 / SEASICK_MAX);
+  for (let mx of [m1x, m2x]) {
+    stroke(0, 160);
+    strokeWeight(2);
+    line(mx, meterY + 1, mx, meterY + meterH - 1);
+    stroke(255, 220);
+    strokeWeight(1);
+    line(mx, meterY + 1, mx, meterY + meterH - 1);
+  }
+  noStroke();
 }
 
 function drawStartScreen() {
