@@ -7,17 +7,19 @@
 // Set to false once hitbox positions look right
 const DEBUG_HITBOXES = false;
 
+// pirate_sprite.png is a 4-column x 2-row sheet (5246x3481).
+// Row 0 = facing left, Row 1 = facing right (4 walk frames each).
 const SPRITE = {
-  frameWidth: 171,
-  frameHeight: 257,
+  frameWidth: 5246 / 4,
+  frameHeight: 3481 / 2,
   numFrames: 4,
-  animSpeed: 20,
-  scale: 0.25,
+  animSpeed: 8,
+  scale: 0.044,
   rows: {
-    down: 0,
+    down: 1,
     up: 1,
-    left: 2,
-    right: 3,
+    left: 0,
+    right: 1,
   },
   offsets: {
     down: { x: 0, y: 0 },
@@ -242,7 +244,7 @@ let introDelayTimer = 0;
 const WIN_DELAY_FRAMES = 90; // 2 seconds at 60fps
 
 function preload() {
-  characterSheet = loadImage("assets/images/spritesheet.png");
+  characterSheet = loadImage("assets/images/pirate_sprite.png");
   imgIntroBg = loadImage("assets/images/backround_intro.PNG");
   imgLogo = loadImage("assets/images/title.png");
   imgRat = loadImage("assets/images/rat.png");
