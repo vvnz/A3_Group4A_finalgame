@@ -120,8 +120,8 @@ const FAINT_FLASH_FRAMES = 12; // frames per flash
 const SEASICK_LAG_TIER1 = SEASICK_MAX / 3;
 const SEASICK_LAG_TIER2 = (SEASICK_MAX * 2) / 3;
 const SEASICK_LAG_TIERS = [
-  { threshold: SEASICK_LAG_TIER2, period: 7, amp: 5 }, // 2/3 full — more frequent, bigger jolt
-  { threshold: SEASICK_LAG_TIER1, period: 14, amp: 2 }, // 1/3 full — occasional, small jolt
+  { threshold: SEASICK_LAG_TIER2, period: 4, amp: 14 }, // 2/3 full — fast, big jolt
+  { threshold: SEASICK_LAG_TIER1, period: 8, amp: 6 }, // 1/3 full — noticeable jolt
 ];
 
 // ── Intro / start-screen ship scene ────────────────────────────────────────
@@ -679,7 +679,10 @@ function updateSeasickJolt() {
   player.joltTimer++;
   if (player.joltTimer >= tier.period) {
     player.joltTimer = 0;
-    player.joltOffset = random(-tier.amp, tier.amp);
+    // Snap to a new offset every tick, alternating side so it always
+    // reads as a visible kick rather than sometimes rolling near zero.
+    let sign = player.joltOffset <= 0 ? 1 : -1;
+    player.joltOffset = sign * random(tier.amp * 0.6, tier.amp);
   }
 }
 
