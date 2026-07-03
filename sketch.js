@@ -36,6 +36,57 @@ const PHYSICS = {
   maxFallSpeed: 20,
 };
 
+// ── Gameplay camera (level view only — NOT used on the intro/splash screen) ──
+// Zooms in on the player and follows the area they're in, rather than
+// showing the whole level at once. Horizontal position eases toward the
+// player continuously; vertical position only re-targets when the player
+// is standing on solid ground, so jumping doesn't drag the screen up/down.
+const CAMERA = {
+  zoom: 1.7,
+  smoothing: 0.08, // 0..1, higher = snappier follow
+};
+
+let camera = {
+  x: CANVAS_WIDTH / 2,
+  y: CANVAS_HEIGHT / 2,
+  targetY: CANVAS_HEIGHT / 2,
+};
+
+function resetCamera() {
+  camera.x = player.x;
+  camera.y = player.y;
+  camera.targetY = player.y;
+}
+
+function updateCamera() {
+  let viewW = CANVAS_WIDTH / CAMERA.zoom;
+  let viewH = CANVAS_HEIGHT / CAMERA.zoom;
+
+  // Only re-target vertically when grounded, so jumps/falls don't pan the camera.
+  if (player.onGround) {
+    camera.targetY = player.y;
+  }
+
+  camera.x = lerp(camera.x, player.x, CAMERA.smoothing);
+  camera.y = lerp(camera.y, camera.targetY, CAMERA.smoothing);
+
+  let halfW = viewW / 2;
+  let halfH = viewH / 2;
+  camera.x = constrain(camera.x, halfW, CANVAS_WIDTH - halfW);
+  camera.y = constrain(camera.y, halfH, CANVAS_HEIGHT - halfH);
+}
+
+function beginCameraView() {
+  push();
+  translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+  scale(CAMERA.zoom);
+  translate(-camera.x, -camera.y);
+}
+
+function endCameraView() {
+  pop();
+}
+
 const STATE = {
   START: "start",
   PLAYING: "playing",
@@ -453,6 +504,8 @@ function draw() {
   if (gameState === STATE.START) {
     drawIntroScreen();
   } else if (gameState === STATE.PLAYING) {
+    updateCamera();
+    beginCameraView();
     drawLevel();
     drawPlatforms();
     drawSpikes();
@@ -479,8 +532,11 @@ function draw() {
     drawRat();
     animateSprite();
     drawCharacter();
+    endCameraView();
     drawHUD();
   } else if (gameState === STATE.FAINTING) {
+    updateCamera();
+    beginCameraView();
     drawLevel();
     drawPlatforms();
     drawSpikes();
@@ -488,6 +544,7 @@ function draw() {
     drawRat();
     updateFainting();
     drawCharacter();
+    endCameraView();
     drawHUD();
   } else if (gameState === STATE.WIN) {
     drawWinScreen();
@@ -522,6 +579,8 @@ function loadLevel(index) {
 
   exitDoorOpen = false;
   winDelayTimer = 0;
+
+  resetCamera();
 }
 
 function blockMovementIfDark() {
