@@ -115,6 +115,15 @@ const SEASICK_DECAY = 0.005; // loss per frame while still
 const FAINT_FLASHES = 6; // total flash count before restart
 const FAINT_FLASH_FRAMES = 12; // frames per flash
 
+// Seasickness "jolt" — past these thresholds the player sprite stutters
+// side to side a little, growing worse as the meter fills further.
+const SEASICK_LAG_TIER1 = SEASICK_MAX / 3;
+const SEASICK_LAG_TIER2 = (SEASICK_MAX * 2) / 3;
+const SEASICK_LAG_TIERS = [
+  { threshold: SEASICK_LAG_TIER2, period: 7, amp: 5 }, // 2/3 full — more frequent, bigger jolt
+  { threshold: SEASICK_LAG_TIER1, period: 14, amp: 2 }, // 1/3 full — occasional, small jolt
+];
+
 // ── Intro / start-screen ship scene ────────────────────────────────────────
 const INTRO = {
   // The deck platform the player stands on (tiled with platform_tile.png)
@@ -221,6 +230,8 @@ let player = {
   faintTimer: 0,
   faintFlash: 0,
   visible: true,
+  joltOffset: 0,
+  joltTimer: 0,
 };
 
 let rat = { x: 0, dir: 1, active: false };
@@ -288,6 +299,8 @@ function initIntroPlayer() {
   player.faintTimer = 0;
   player.faintFlash = 0;
   player.visible = true;
+  player.joltOffset = 0;
+  player.joltTimer = 0;
   introDoorOpen = false;
   introDelayTimer = 0;
 }
@@ -577,6 +590,8 @@ function loadLevel(index) {
   player.faintTimer = 0;
   player.faintFlash = 0;
   player.visible = true;
+  player.joltOffset = 0;
+  player.joltTimer = 0;
 
   let ratData = LEVELS[index].rat;
   if (ratData) {
@@ -644,6 +659,27 @@ function updateSeasickness() {
   if (player.seasickness >= SEASICK_MAX) {
     player.seasickness = SEASICK_MAX;
     triggerFaint();
+  }
+
+  updateSeasickJolt();
+}
+
+// Stutters the drawn sprite side to side once seasickness crosses a tier
+// threshold — the offset holds steady between ticks so it reads as a lag
+// spike rather than a smooth wobble, and gets faster/bigger at higher tiers.
+function updateSeasickJolt() {
+  let tier = SEASICK_LAG_TIERS.find((t) => player.seasickness >= t.threshold);
+
+  if (!tier) {
+    player.joltOffset = 0;
+    player.joltTimer = 0;
+    return;
+  }
+
+  player.joltTimer++;
+  if (player.joltTimer >= tier.period) {
+    player.joltTimer = 0;
+    player.joltOffset = random(-tier.amp, tier.amp);
   }
 }
 
@@ -940,7 +976,7 @@ function drawCharacter() {
 
   image(
     characterSheet,
-    player.x,
+    player.x + player.joltOffset,
     player.y,
     dw,
     dh,
@@ -993,6 +1029,19 @@ function drawHUD() {
   noStroke();
   fill(r, g, 80);
   rect(meterX + 1, meterY + 1, (meterW - 2) * fill_pct, meterH - 2, 3);
+
+  // tier markers — where the sprite starts jolting (1/3 and 2/3 full)
+  let m1x = meterX + meterW * (SEASICK_LAG_TIER1 / SEASICK_MAX);
+  let m2x = meterX + meterW * (SEASICK_LAG_TIER2 / SEASICK_MAX);
+  for (let mx of [m1x, m2x]) {
+    stroke(0, 160);
+    strokeWeight(2);
+    line(mx, meterY + 1, mx, meterY + meterH - 1);
+    stroke(255, 220);
+    strokeWeight(1);
+    line(mx, meterY + 1, mx, meterY + meterH - 1);
+  }
+  noStroke();
 }
 
 function drawStartScreen() {
