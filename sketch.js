@@ -97,12 +97,12 @@ const LEVELS = [
     start: { x: 40, y: 200 },
     platforms: [
       // Format: { x, y, tilesW, tilesH } - each tile is 16x16 pixels
-      { x: 0, y: 304, tilesW: 15, tilesH: 1 },
-      { x: 224, y: 304, tilesW: 1, tilesH: 4 }, //vertical wall 1.1
-      { x: 320, y: 240, tilesW: 9, tilesH: 1 }, //floating platform
-      { x: 240, y: 352, tilesW: 20, tilesH: 1 }, //spike platform
-      { x: 544, y: 304, tilesW: 1, tilesH: 4 }, //vertical wall 1.2
-      { x: 544, y: 304, tilesW: 18, tilesH: 1 }, //after spike platform
+      { x: 0, y: 304, tilesW: 27, tilesH: 1 },
+      { x: 416, y: 304, tilesW: 1, tilesH: 4 }, //vertical wall 1.1
+      { x: 480, y: 240, tilesW: 12, tilesH: 1 }, //floating platform (jump platform centered above dip)
+      { x: 432, y: 352, tilesW: 18, tilesH: 1 }, //spike platform (dip floor)
+      { x: 704, y: 304, tilesW: 1, tilesH: 4 }, //vertical wall 1.2
+      { x: 704, y: 304, tilesW: 8, tilesH: 1 }, //after spike platform
       { x: 320, y: 432, tilesW: 7, tilesH: 1 }, //floating staircase 2
       { x: 464, y: 496, tilesW: 6, tilesH: 1 }, //floating staircase 1
       { x: 848, y: 400, tilesW: 1, tilesH: 9 }, //vertical wall 3
@@ -124,8 +124,11 @@ const LEVELS = [
         tilesH: 3,
         barrel: true,
       }, //barrel under second lantern
+      { x: 244, y: 256, tilesW: 3, tilesH: 3, barrel: true }, //starter barrels: bottom-left
+      { x: 292, y: 256, tilesW: 3, tilesH: 3, barrel: true }, //starter barrels: bottom-right
+      { x: 268, y: 208, tilesW: 3, tilesH: 3, barrel: true }, //starter barrels: stacked middle
     ],
-    spikes: [{ x: 240, y: 352, tilesW: 19 }],
+    spikes: [{ x: 432, y: 352, tilesW: 17 }],
     rat: { minX: 300, maxX: 455 },
     spawnDoor: { x: 13, y: 228 },
     exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
