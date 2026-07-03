@@ -242,6 +242,7 @@ let introDoorOpen = false;
 let winDelayTimer = 0;
 let introDelayTimer = 0;
 const WIN_DELAY_FRAMES = 90; // 2 seconds at 60fps
+const EXIT_DELAY_FRAMES = 4; // near-instant: show the open door for a blink, then progress
 
 function preload() {
   characterSheet = loadImage("assets/images/pirate_sprite.png");
@@ -522,12 +523,19 @@ function draw() {
     drawDarknessOverlay();
     if (winDelayTimer > 0) {
       winDelayTimer--;
-      if (winDelayTimer === 0) gameState = STATE.WIN;
+      if (winDelayTimer === 0) {
+        if (currentLevel < LEVELS.length - 1) {
+          loadLevel(currentLevel + 1);
+        } else {
+          gameState = STATE.WIN;
+        }
+      }
     }
     updateSeasickness();
     resolveHorizontalCollisions();
     applyPhysics();
     clampToBounds();
+    checkExitDoor();
     checkSpikeCollision();
     updateRat();
     checkRatCollision();
@@ -618,7 +626,7 @@ function handleInput() {
     player.direction = "right";
     player.isMoving = true;
   }
-  if (keyIsDown(87) && player.onGround) {
+  if ((keyIsDown(87) || keyIsDown(32)) && player.onGround) {
     player.vy = -PHYSICS.jumpStrength;
     player.onGround = false;
   }
@@ -850,6 +858,18 @@ function drawSpikes() {
   pop();
 }
 
+function checkExitDoor() {
+  if (winDelayTimer > 0 || exitDoorOpen) return;
+  let level = LEVELS[currentLevel];
+  if (!level.exitDoor) return;
+  let ex = level.exitDoor.x + DOOR_W / 2;
+  let ey = level.exitDoor.y + DOOR_H / 2;
+  if (abs(player.x - ex) < 50 && abs(player.y - ey) < 70) {
+    exitDoorOpen = true;
+    winDelayTimer = EXIT_DELAY_FRAMES;
+  }
+}
+
 function drawDoors() {
   let level = LEVELS[currentLevel];
   if (!level.spawnDoor || !level.exitDoor) return;
@@ -864,13 +884,6 @@ function drawDoors() {
   let ex = level.exitDoor.x;
   let ey = level.exitDoor.y;
   image(exitDoorOpen ? imgDoorOpen : imgDoorClosed, ex, ey, DOOR_W, DOOR_H);
-
-  // Interaction prompt above exit door
-  if (!exitDoorOpen) {
-    let promptX = ex + DOOR_W / 2;
-    let promptY = ey - 20;
-    drawInteractionPrompt(promptX, promptY);
-  }
 
   pop();
 }
@@ -1054,17 +1067,6 @@ function keyPressed() {
       }
     }
   } else if (gameState === STATE.PLAYING) {
-    if (keyCode === 69) {
-      let level = LEVELS[currentLevel];
-      if (level.exitDoor) {
-        let ex = level.exitDoor.x + DOOR_W / 2;
-        let ey = level.exitDoor.y + DOOR_H / 2;
-        if (abs(player.x - ex) < 50 && abs(player.y - ey) < 70) {
-          exitDoorOpen = true;
-          winDelayTimer = WIN_DELAY_FRAMES;
-        }
-      }
-    }
     if (keyCode === 78) {
       if (currentLevel < LEVELS.length - 1) {
         loadLevel(currentLevel + 1);
