@@ -131,8 +131,8 @@ const FAINT_FLASH_FRAMES = 12; // frames per flash
 const SEASICK_LAG_TIER1 = SEASICK_MAX / 3;
 const SEASICK_LAG_TIER2 = (SEASICK_MAX * 2) / 3;
 const SEASICK_LAG_TIERS = [
-  { threshold: SEASICK_LAG_TIER2, speedMultiplier: 0.35, wobbleAmp: 8, wobbleFreq: 0.35 }, // 2/3 full — very sluggish, heavy sway
-  { threshold: SEASICK_LAG_TIER1, speedMultiplier: 0.65, wobbleAmp: 3, wobbleFreq: 0.2 }, // 1/3 full — noticeably slower, slight sway
+  { threshold: SEASICK_LAG_TIER2, speedMultiplier: 0.55, wobbleAmp: 9, wobbleFreq: 0.35 }, // 2/3 full — slower, heavy sway
+  { threshold: SEASICK_LAG_TIER1, speedMultiplier: 0.8, wobbleAmp: 7, wobbleFreq: 0.28 }, // 1/3 full — light slow, strong sway
 ];
 
 // Returns the active tier config for the player's current seasickness, or null.
