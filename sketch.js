@@ -88,6 +88,13 @@ function beginCameraView() {
   if (tier) {
     wobbleX = sin(frameCount * tier.wobbleFreq) * tier.wobbleAmp;
     wobbleY = cos(frameCount * tier.wobbleFreq * 0.8) * tier.wobbleAmp * 0.6;
+    // Soft haze via the canvas's native blur filter — cheap, but it's a
+    // uniform blur rather than a directional motion streak (the level
+    // redraws fully opaque every frame, so a real trailing-blur effect
+    // would need an offscreen accumulation buffer instead).
+    drawingContext.filter = `blur(${tier.blur}px)`;
+  } else {
+    drawingContext.filter = "none";
   }
 
   push();
@@ -98,6 +105,7 @@ function beginCameraView() {
 
 function endCameraView() {
   pop();
+  drawingContext.filter = "none"; // don't blur the HUD drawn after this
 }
 
 const STATE = {
@@ -131,8 +139,8 @@ const FAINT_FLASH_FRAMES = 12; // frames per flash
 const SEASICK_LAG_TIER1 = SEASICK_MAX / 3;
 const SEASICK_LAG_TIER2 = (SEASICK_MAX * 2) / 3;
 const SEASICK_LAG_TIERS = [
-  { threshold: SEASICK_LAG_TIER2, speedMultiplier: 0.7, wobbleAmp: 9, wobbleFreq: 0.35 }, // 2/3 full — slower, heavy sway
-  { threshold: SEASICK_LAG_TIER1, speedMultiplier: 0.9, wobbleAmp: 7, wobbleFreq: 0.28 }, // 1/3 full — light slow, strong sway
+  { threshold: SEASICK_LAG_TIER2, speedMultiplier: 0.7, wobbleAmp: 3, wobbleFreq: 0.22, blur: 3 }, // 2/3 full
+  { threshold: SEASICK_LAG_TIER1, speedMultiplier: 0.9, wobbleAmp: 1.5, wobbleFreq: 0.16, blur: 1.5 }, // 1/3 full
 ];
 
 // Returns the active tier config for the player's current seasickness, or null.
