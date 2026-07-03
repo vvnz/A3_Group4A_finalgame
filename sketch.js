@@ -5,9 +5,7 @@
 // ============================================================
 
 // Set to false once hitbox positions look right
-const DEBUG_HITBOXES = false;
-
-print("hello world");
+const DEBUG_HITBOXES = true;
 
 const SPRITE = {
   frameWidth: 171,
@@ -56,28 +54,26 @@ const SPIKE_H = 16;
 
 // rat enemy
 const RAT_SPEED = 2.4; // patrol speed in pixels per frame — adjust to taste
-const RAT_SIZE = 32; // display size on canvas
+const RAT_SIZE = 48; // display size on canvas
 
 const SEASICK_MAX = 100;
-const SEASICK_RATE = 0.3; // gain per frame while moving
+const SEASICK_RATE = 0.15; // gain per frame while moving
 const SEASICK_DECAY = 0.005; // loss per frame while still
 const FAINT_FLASHES = 6; // total flash count before restart
 const FAINT_FLASH_FRAMES = 12; // frames per flash
 
 // ── Intro / start-screen ship scene ────────────────────────────────────────
 const INTRO = {
-  // The deck platform the player stands on (tiled with platform_tile.png)
-  // x: horizontal position, y: vertical position
-  // tilesW: width in tiles, tilesH: height in tiles (each tile is 16px)
-  platform: { x: 480, y: 464, tilesW: 16, tilesH: 1 },
-  platform2: { x: 565, y: CANVAS_HEIGHT - 16, tilesW: 26, tilesH: 1 }, // right half, bottom
+  // The deck platform the player stands on (drawn as brown rect)
+  platform: { x: 510, y: 460, w: 250, h: 20 },
 
   // Outer-shell walls — stepped rectangles tracing the curved hull left edge.
   walls: [
-    { x: 450, y: 312, w: 500, h: 52 }, // DECK
-    { x: 460, y: 520, w: 100, h: 100 }, // VERTICAL WALL OML
-    { x: 880, y: 330, w: 100, h: 140 }, //BOX ON THE RIGHT
-    { x: 440, y: 300, w: 40, h: 300 },
+    { x: 450, y: 312, w: 14, h: 52 }, // top of curved bow
+    { x: 464, y: 364, w: 18, h: 50 },
+    { x: 482, y: 414, w: 22, h: 50 },
+    { x: 504, y: 464, w: 26, h: 50 },
+    { x: 530, y: 514, w: 30, h: 86 }, // bottom-left curve
   ],
 
   // Decorations — positioned on the deck inside the hull boundary
@@ -88,7 +84,7 @@ const INTRO = {
   door: { x: CANVAS_WIDTH - DOOR_W - 8, y: CANVAS_HEIGHT - DOOR_H - 8 },
 
   // Player spawns just above the deck
-  playerStart: { x: 490, y: 400 },
+  playerStart: { x: 580, y: 380 },
 };
 
 const LEVELS = [
@@ -98,37 +94,23 @@ const LEVELS = [
     backgroundColor: [150, 75, 0],
     start: { x: 40, y: 200 },
     platforms: [
-      // Format: { x, y, tilesW, tilesH } - each tile is 16x16 pixels
-      { x: 0, y: 304, tilesW: 15, tilesH: 1 },
-      { x: 224, y: 304, tilesW: 1, tilesH: 4 }, //vertical wall 1.1
-      { x: 320, y: 240, tilesW: 9, tilesH: 1 }, //floating platform
-      { x: 240, y: 352, tilesW: 20, tilesH: 1 }, //spike platform
-      { x: 544, y: 304, tilesW: 1, tilesH: 4 }, //vertical wall 1.2
-      { x: 544, y: 304, tilesW: 18, tilesH: 1 }, //after spike platform
-      { x: 320, y: 432, tilesW: 7, tilesH: 1 }, //floating staircase 2
-      { x: 464, y: 496, tilesW: 6, tilesH: 1 }, //floating staircase 1
-      { x: 848, y: 400, tilesW: 1, tilesH: 9 }, //vertical wall 3
-      { x: 848, y: 384, tilesW: 7, tilesH: 1 }, //top of vertical wall 3
-      { x: 0, y: 544, tilesW: 17, tilesH: 50 }, // big block on the left
-      { x: 576, y: 528, tilesW: 18, tilesH: 1 }, //floating staircase 1
-      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 },
-      {
-        x: 480,
-        y: CANVAS_HEIGHT - 16 - 48,
-        tilesW: 3,
-        tilesH: 3,
-        barrel: true,
-      }, //barrel (uses barrel.png image)
-      {
-        x: 30,
-        y: 498,
-        tilesW: 3,
-        tilesH: 3,
-        barrel: true,
-      }, //barrel under second lantern
+      { x: 0, y: 306, w: 250, h: 16 },
+      { x: 234, y: 306, w: 16, h: 60 }, //vertical wall 1.1
+      { x: 330, y: 250, w: 130, h: 16 }, //floating platform
+      { x: 250, y: 350, w: 300, h: 16 }, //spike platform
+      { x: 546, y: 306, w: 16, h: 60 }, //vertical wall 1.2
+      { x: 548, y: 306, w: 278, h: 16 }, //after spike platform
+      { x: 323, y: 430, w: 100, h: 16 }, //floating staircase 2
+      { x: 463, y: 490, w: 100, h: 16 }, //floating staircase 1
+      { x: 850, y: 394, w: 16, h: 140 }, //vertical wall 3
+      { x: 849, y: 390, w: 111, h: 16 }, //top of vertical wall 3
+      { x: 0, y: 540, w: 270, h: 16 },
+      { x: 577, y: 529, w: 292, h: 16 }, //floating staircase 1
+      { x: 0, y: CANVAS_HEIGHT - 16, w: CANVAS_WIDTH, h: 16 },
+      { x: 488, y: CANVAS_HEIGHT - 16 - 44, w: 40, h: 44, barrel: true },
     ],
-    spikes: [{ x: 240, y: 352, tilesW: 19 }],
-    rat: { minX: 300, maxX: 455 },
+    spikes: [{ x: 254, y: 350, w: 295 }],
+    rat: { minX: 270, maxX: 455 },
     spawnDoor: { x: 13, y: 228 },
     exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
   },
@@ -181,8 +163,6 @@ let imgDoorClosed;
 let imgDoorOpen;
 let imgHammock;
 let imgParrot;
-let imgLantern;
-let imgPlatformTile;
 let exitDoorOpen = false;
 let introDoorOpen = false;
 let winDelayTimer = 0;
@@ -192,15 +172,13 @@ const WIN_DELAY_FRAMES = 90; // 2 seconds at 60fps
 function preload() {
   characterSheet = loadImage("assets/images/spritesheet.png");
   imgIntroBg = loadImage("assets/images/backround_intro.PNG");
-  imgLogo = loadImage("assets/images/title.png");
+  imgLogo = loadImage("assets/images/sealegs_logo.png");
   imgRat = loadImage("assets/images/rat.png");
   imgBarrel = loadImage("assets/images/barrel.png");
   imgDoorClosed = loadImage("assets/images/doorclose.png");
   imgDoorOpen = loadImage("assets/images/dooropen.png");
   imgHammock = loadImage("assets/images/hammock.png");
   imgParrot = loadImage("assets/images/parrot.png");
-  imgLantern = loadImage("assets/images/lantern.png");
-  imgPlatformTile = loadImage("assets/images/platform_tile.png");
 
   for (let i = 0; i < LEVELS.length; i++) {
     if (LEVELS[i].background) {
@@ -238,23 +216,20 @@ function initIntroPlayer() {
 }
 
 function getIntroColliders() {
-  return [INTRO.platform, INTRO.platform2, ...INTRO.walls];
+  return [INTRO.platform, ...INTRO.walls];
 }
 
 function resolveIntroCollisions() {
-  const TILE_SIZE = 16;
   let colliders = getIntroColliders();
   for (let p of colliders) {
-    let h = p.tilesH ? p.tilesH * TILE_SIZE : p.h;
-    let w = p.tilesW ? p.tilesW * TILE_SIZE : p.w;
-
-    let withinY = player.y + player.hh > p.y && player.y - player.hh < p.y + h;
+    let withinY =
+      player.y + player.hh > p.y && player.y - player.hh < p.y + p.h;
     if (!withinY) continue;
 
     let pl = player.x - player.hw;
     let pr = player.x + player.hw;
     let bl = p.x;
-    let br = p.x + w;
+    let br = p.x + p.w;
 
     if (pr > bl && pl < br) {
       let pushLeft = pr - bl;
@@ -269,7 +244,6 @@ function resolveIntroCollisions() {
 }
 
 function applyIntroPhysics() {
-  const TILE_SIZE = 16;
   player.vy += PHYSICS.gravity;
   player.vy = constrain(player.vy, -PHYSICS.jumpStrength, PHYSICS.maxFallSpeed);
 
@@ -280,14 +254,12 @@ function applyIntroPhysics() {
 
   let colliders = getIntroColliders();
   for (let p of colliders) {
-    let h = p.tilesH ? p.tilesH * TILE_SIZE : p.h;
-    let w = p.tilesW ? p.tilesW * TILE_SIZE : p.w;
-
-    let withinX = player.x + player.hw > p.x && player.x - player.hw < p.x + w;
+    let withinX =
+      player.x + player.hw > p.x && player.x - player.hw < p.x + p.w;
     if (!withinX) continue;
 
     let top = p.y;
-    let bottom = p.y + h;
+    let bottom = p.y + p.h;
 
     if (player.vy >= 0 && prevBottom <= top && player.y + player.hh >= top) {
       player.y = top - player.hh;
@@ -319,32 +291,6 @@ function drawIntroScreen() {
   image(imgIntroBg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   pop();
 
-  // Logo in upper left
-  push();
-  imageMode(CORNER);
-  let logoX = 40;
-  let logoY = 25;
-  let logoW = 400;
-  let logoH = logoW * (imgLogo.height / imgLogo.width);
-  image(imgLogo, logoX, logoY, logoW, logoH);
-  pop();
-
-  // Instructions
-  push();
-  textFont("Verdana");
-  textSize(14);
-  textAlign(LEFT, TOP);
-  strokeWeight(3);
-  stroke(0);
-  fill(0);
-  text("A / D to move, W to jump", logoX, logoY + logoH + 20);
-  text("Press E to interact", logoX, logoY + logoH + 40);
-  noStroke();
-  fill(255);
-  text("A / D to move, W to jump", logoX, logoY + logoH + 20);
-  text("Press E to interact", logoX, logoY + logoH + 40);
-  pop();
-
   // Decorations (behind player)
   push();
   imageMode(CORNER);
@@ -364,24 +310,14 @@ function drawIntroScreen() {
   );
   pop();
 
-  // Platforms (always visible)
+  // Brown platform (always visible)
   push();
   rectMode(CORNER);
-  imageMode(CORNER);
-  const TILE_SIZE = 16;
-
-  // Draw both platforms
-  for (let platform of [INTRO.platform, INTRO.platform2]) {
-    let dpW = platform.tilesW * TILE_SIZE;
-    let dpH = platform.tilesH * TILE_SIZE;
-    let startX = Math.floor(platform.x / TILE_SIZE) * TILE_SIZE;
-    let startY = Math.floor(platform.y / TILE_SIZE) * TILE_SIZE;
-    for (let tileY = startY; tileY < platform.y + dpH; tileY += TILE_SIZE) {
-      for (let tileX = startX; tileX < platform.x + dpW; tileX += TILE_SIZE) {
-        image(imgPlatformTile, tileX, tileY, TILE_SIZE, TILE_SIZE);
-      }
-    }
-  }
+  fill(101, 67, 33);
+  stroke(60, 35, 10);
+  strokeWeight(2);
+  let dp = INTRO.platform;
+  rect(dp.x, dp.y, dp.w, dp.h);
   pop();
 
   // Debug: hull outer-shell wall outlines only (no player box)
@@ -391,16 +327,8 @@ function drawIntroScreen() {
     noFill();
     stroke(255, 0, 0);
     strokeWeight(2);
-    // platform outlines
-    let dp1 = INTRO.platform;
-    let dp1W = dp1.tilesW * TILE_SIZE;
-    let dp1H = dp1.tilesH * TILE_SIZE;
-    rect(dp1.x, dp1.y, dp1W, dp1H);
-
-    let dp2 = INTRO.platform2;
-    let dp2W = dp2.tilesW * TILE_SIZE;
-    let dp2H = dp2.tilesH * TILE_SIZE;
-    rect(dp2.x, dp2.y, dp2W, dp2H);
+    // platform outline
+    rect(dp.x, dp.y, dp.w, dp.h);
     // hull walls
     for (let w of INTRO.walls) {
       rect(w.x, w.y, w.w, w.h);
@@ -420,11 +348,21 @@ function drawIntroScreen() {
   );
   pop();
 
-  // Interaction prompt above door (only when door is closed)
+  // "Press E" label above door (only when door is closed)
   if (!introDoorOpen) {
-    let promptX = INTRO.door.x + DOOR_W / 2;
-    let promptY = INTRO.door.y - 20;
-    drawInteractionPrompt(promptX, promptY);
+    let labelX = INTRO.door.x + DOOR_W / 2;
+    let labelY = INTRO.door.y - 12;
+    push();
+    textSize(11);
+    textAlign(CENTER, BOTTOM);
+    strokeWeight(3);
+    stroke(0);
+    fill(0);
+    text("Press E to enter", labelX, labelY);
+    noStroke();
+    fill(255);
+    text("Press E to enter", labelX, labelY);
+    pop();
   }
 
   // Handle intro door delay timer
@@ -603,13 +541,12 @@ function drawRat() {
   if (!rat.active) return;
 
   let ratY = CANVAS_HEIGHT - 16 - RAT_SIZE / 2;
-  let ratWidth = RAT_SIZE * (imgRat.width / imgRat.height);
   push();
   imageMode(CENTER);
   translate(rat.x, ratY);
   // image faces left by default — flip horizontally when moving right
   if (rat.dir === 1) scale(-1, 1);
-  image(imgRat, 0, 0, ratWidth, RAT_SIZE);
+  image(imgRat, 0, 0, RAT_SIZE, RAT_SIZE);
   pop();
 }
 
@@ -631,13 +568,11 @@ function checkRatCollision() {
 }
 
 function checkSpikeCollision() {
-  const TILE_SIZE = 16;
   let spikes = LEVELS[currentLevel].spikes || [];
   for (let i = 0; i < spikes.length; i++) {
     let s = spikes[i];
-    let w = s.tilesW ? s.tilesW * TILE_SIZE : s.w;
     let left = s.x;
-    let right = s.x + w;
+    let right = s.x + s.w;
     let top = s.y - SPIKE_H;
     let bottom = s.y;
     if (
@@ -669,20 +604,17 @@ function updateFainting() {
 }
 
 function resolveHorizontalCollisions() {
-  const TILE_SIZE = 16;
   let platforms = LEVELS[currentLevel].platforms || [];
   for (let i = 0; i < platforms.length; i++) {
     let p = platforms[i];
-    let w = p.tilesW * TILE_SIZE;
-    let h = p.tilesH * TILE_SIZE;
-
-    let withinY = player.y + player.hh > p.y && player.y - player.hh < p.y + h;
+    let withinY =
+      player.y + player.hh > p.y && player.y - player.hh < p.y + p.h;
     if (!withinY) continue;
 
     let pl = player.x - player.hw;
     let pr = player.x + player.hw;
     let bl = p.x;
-    let br = p.x + w;
+    let br = p.x + p.w;
 
     if (pr > bl && pl < br) {
       let pushLeft = pr - bl;
@@ -697,7 +629,6 @@ function resolveHorizontalCollisions() {
 }
 
 function applyPhysics() {
-  const TILE_SIZE = 16;
   player.vy += PHYSICS.gravity;
   player.vy = constrain(player.vy, -PHYSICS.jumpStrength, PHYSICS.maxFallSpeed);
 
@@ -709,14 +640,12 @@ function applyPhysics() {
   let platforms = LEVELS[currentLevel].platforms || [];
   for (let i = 0; i < platforms.length; i++) {
     let p = platforms[i];
-    let w = p.tilesW * TILE_SIZE;
-    let h = p.tilesH * TILE_SIZE;
-
-    let withinX = player.x + player.hw > p.x && player.x - player.hw < p.x + w;
+    let withinX =
+      player.x + player.hw > p.x && player.x - player.hw < p.x + p.w;
     if (!withinX) continue;
 
     let top = p.y;
-    let bottom = p.y + h;
+    let bottom = p.y + p.h;
 
     if (player.vy >= 0 && prevBottom <= top && player.y + player.hh >= top) {
       player.y = top - player.hh;
@@ -741,35 +670,25 @@ function applyPhysics() {
 }
 
 function drawPlatforms() {
-  const TILE_SIZE = 16;
   let platforms = LEVELS[currentLevel].platforms || [];
   push();
   rectMode(CORNER);
   imageMode(CORNER);
   for (let i = 0; i < platforms.length; i++) {
     let p = platforms[i];
-    let w = p.tilesW * TILE_SIZE;
-    let h = p.tilesH * TILE_SIZE;
-
     if (p.barrel) {
-      image(imgBarrel, p.x, p.y, w, h);
+      image(imgBarrel, p.x, p.y, p.w, p.h);
     } else {
-      // Tile from global origin for alignment across platforms
-      let startX = Math.floor(p.x / TILE_SIZE) * TILE_SIZE;
-      let startY = Math.floor(p.y / TILE_SIZE) * TILE_SIZE;
-
-      for (let tileY = startY; tileY < p.y + h; tileY += TILE_SIZE) {
-        for (let tileX = startX; tileX < p.x + w; tileX += TILE_SIZE) {
-          image(imgPlatformTile, tileX, tileY, TILE_SIZE, TILE_SIZE);
-        }
-      }
+      fill(101, 67, 33);
+      stroke(60, 35, 10);
+      strokeWeight(2);
+      rect(p.x, p.y, p.w, p.h);
     }
   }
   pop();
 }
 
 function drawSpikes() {
-  const TILE_SIZE = 16;
   let spikes = LEVELS[currentLevel].spikes || [];
   push();
   rectMode(CORNER);
@@ -778,8 +697,7 @@ function drawSpikes() {
   strokeWeight(1);
   for (let i = 0; i < spikes.length; i++) {
     let s = spikes[i];
-    let w = s.tilesW ? s.tilesW * TILE_SIZE : s.w;
-    let count = floor(w / SPIKE_W);
+    let count = floor(s.w / SPIKE_W);
     for (let j = 0; j < count; j++) {
       let lx = s.x + j * SPIKE_W;
       triangle(lx, s.y, lx + SPIKE_W, s.y, lx + SPIKE_W / 2, s.y - SPIKE_H);
@@ -803,30 +721,21 @@ function drawDoors() {
   let ey = level.exitDoor.y;
   image(exitDoorOpen ? imgDoorOpen : imgDoorClosed, ex, ey, DOOR_W, DOOR_H);
 
-  // Interaction prompt above exit door
+  // "Press E to open" label above exit door
   if (!exitDoorOpen) {
-    let promptX = ex + DOOR_W / 2;
-    let promptY = ey - 20;
-    drawInteractionPrompt(promptX, promptY);
+    let labelX = ex + DOOR_W / 2;
+    let labelY = ey - 14;
+    textSize(11);
+    textAlign(CENTER, BOTTOM);
+    strokeWeight(3);
+    stroke(0);
+    fill(0);
+    text("Press E to open", labelX, labelY);
+    noStroke();
+    fill(255);
+    text("Press E to open", labelX, labelY);
   }
 
-  pop();
-}
-
-function drawInteractionPrompt(x, y) {
-  const radius = 12;
-  push();
-  // White circle
-  fill(255, 255, 255, 80);
-  noStroke();
-  circle(x, y, radius * 2);
-
-  // Black E
-  fill(0);
-  textSize(16);
-  textAlign(CENTER, TOP);
-  textStyle(BOLD);
-  text("E", x, y - 7);
   pop();
 }
 
