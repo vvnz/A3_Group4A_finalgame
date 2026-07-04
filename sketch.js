@@ -506,6 +506,16 @@ function drawSplashScreen() {
 
   beginCameraView(SPLASH_ZOOM);
   drawIntroWorld();
+
+  // Let the player fall and settle onto the deck during the splash screen
+  // (no input yet) so it's already standing there once the pan starts,
+  // instead of popping in or still visibly falling mid-pan.
+  resolveIntroCollisions();
+  applyIntroPhysics();
+  clampToBounds();
+  animateSprite();
+  drawCharacter();
+
   endCameraView();
 
   push();
@@ -1151,7 +1161,11 @@ function keyPressed() {
     if (keyCode === ENTER) {
       // Camera stays right where the splash shot left it — updateCamera()
       // in drawIntroScreen() eases it toward the player from here, which
-      // reads as a pan down into the tutorial area.
+      // reads as a pan down into the tutorial area. Sync the vertical
+      // target to the player's current (already-settled) position now,
+      // so both axes start easing from the same frame — with a shared
+      // lerp rate that traces a straight diagonal instead of a bent path.
+      camera.targetY = player.y;
       gameState = STATE.START;
     }
   } else if (gameState === STATE.PLAYING) {
