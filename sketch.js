@@ -44,7 +44,7 @@ const PHYSICS = {
 // player continuously; vertical position only re-targets when the player
 // is standing on solid ground, so jumping doesn't drag the screen up/down.
 const CAMERA = {
-  zoom: 1.7,
+  zoom: 1.9,
   smoothing: 0.08, // 0..1, higher = snappier follow
 };
 
@@ -101,6 +101,7 @@ function endCameraView() {
 }
 
 const STATE = {
+  SPLASH: "splash",
   START: "start",
   PLAYING: "playing",
   FAINTING: "fainting",
@@ -121,7 +122,7 @@ const RAT_SPEED = 2.4; // patrol speed in pixels per frame — adjust to taste
 const RAT_SIZE = 32; // display size on canvas
 
 const SEASICK_MAX = 100;
-const SEASICK_RATE = 0.3; // gain per frame while moving
+const SEASICK_RATE = 0.23; // gain per frame while moving
 const SEASICK_DECAY = 0.005; // loss per frame while still
 const FAINT_FLASHES = 6; // total flash count before restart
 const FAINT_FLASH_FRAMES = 12; // frames per flash
@@ -169,7 +170,7 @@ const INTRO = {
   ],
 
   // Decorations — positioned on the deck inside the hull boundary
-  hammock: { x: 540, y: 380, w: 200, h: 120 },
+  hammock: { x: 500, y: 386, w: 200, h: 120 },
 
   // Door at the bottom-right; opens automatically once the player reaches it
   door: { x: CANVAS_WIDTH - DOOR_W - 8, y: CANVAS_HEIGHT - DOOR_H - 8 },
@@ -177,6 +178,12 @@ const INTRO = {
   // Player spawns just above the deck
   playerStart: { x: 490, y: 400 },
 };
+
+// Fixed camera framing for the splash/title screen — the upper part of the
+// ship (trees + railing). The tutorial framing isn't a separate constant:
+// it's just wherever the player spawns, since updateCamera() eases toward
+// the player once STATE.START begins, producing the pan.
+const INTRO_SPLASH_VIEW = { x: 700, y: 180 };
 
 const LEVELS = [
   {
@@ -303,8 +310,8 @@ function preload() {
 function setup() {
   createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   imageMode(CENTER);
-  textFont("monospace");
-  initIntroPlayer();
+  textFont("Pixelify Sans");
+  goToSplash();
 }
 
 // ── Intro scene helpers ─────────────────────────────────────────────────────
@@ -324,6 +331,14 @@ function initIntroPlayer() {
   player.visible = true;
   introDoorOpen = false;
   introDelayTimer = 0;
+}
+
+// Resets to the very beginning: the fixed splash/title framing.
+function goToSplash() {
+  initIntroPlayer();
+  gameState = STATE.SPLASH;
+  camera.x = INTRO_SPLASH_VIEW.x;
+  camera.y = INTRO_SPLASH_VIEW.y;
 }
 
 function getIntroColliders() {
@@ -401,40 +416,15 @@ function applyIntroPhysics() {
   }
 }
 
-function drawIntroScreen() {
-  // Background
+// Everything about the ship-deck world that's shared between the fixed
+// splash framing and the interactive tutorial framing — both are just the
+// same background/decorations/door viewed through a different camera shot.
+function drawIntroWorld() {
   push();
   imageMode(CORNER);
   image(imgIntroBg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   pop();
 
-  // Logo in upper left
-  push();
-  imageMode(CORNER);
-  let logoX = 40;
-  let logoY = 25;
-  let logoW = 400;
-  let logoH = logoW * (imgLogo.height / imgLogo.width);
-  image(imgLogo, logoX, logoY, logoW, logoH);
-  pop();
-
-  // Instructions
-  push();
-  textFont("Verdana");
-  textSize(14);
-  textAlign(LEFT, TOP);
-  strokeWeight(3);
-  stroke(0);
-  fill(0);
-  text("A / D to move, W to jump", logoX, logoY + logoH + 20);
-  text("Press E to interact", logoX, logoY + logoH + 40);
-  noStroke();
-  fill(255);
-  text("A / D to move, W to jump", logoX, logoY + logoH + 20);
-  text("Press E to interact", logoX, logoY + logoH + 40);
-  pop();
-
-  // Decorations (behind player)
   push();
   imageMode(CORNER);
   image(
@@ -501,7 +491,49 @@ function drawIntroScreen() {
     DOOR_H,
   );
   pop();
+}
 
+// Title card — a fixed zoomed-in shot of the upper part of the ship (same
+// zoom the levels use), with the logo and prompt overlaid on top, unzoomed.
+function drawSplashScreen() {
+  camera.x = INTRO_SPLASH_VIEW.x;
+  camera.y = INTRO_SPLASH_VIEW.y;
+
+  beginCameraView();
+  drawIntroWorld();
+  endCameraView();
+
+  push();
+  imageMode(CORNER);
+  let logoX = 40;
+  let logoY = 25;
+  let logoW = 400;
+  let logoH = logoW * (imgLogo.height / imgLogo.width);
+  image(imgLogo, logoX, logoY, logoW, logoH);
+  pop();
+
+  push();
+  textAlign(CENTER, CENTER);
+  textSize(24);
+  strokeWeight(4);
+  stroke(0);
+  fill(0);
+  text("Press ENTER to start", CANVAS_WIDTH / 2, CANVAS_HEIGHT - 60);
+  noStroke();
+  fill(255);
+  text("Press ENTER to start", CANVAS_WIDTH / 2, CANVAS_HEIGHT - 60);
+  pop();
+}
+
+// Interactive ship-deck tutorial — camera starts wherever the splash shot
+// left it and eases toward the player via the normal updateCamera() lerp,
+// which reads as a pan into this area and then tracks the player exactly
+// like a level would.
+function drawIntroScreen() {
+  updateCamera();
+  beginCameraView();
+
+  drawIntroWorld();
   checkIntroDoor();
 
   // Handle intro door delay timer
@@ -521,6 +553,7 @@ function drawIntroScreen() {
   animateSprite();
 
   drawCharacter();
+  endCameraView();
 }
 
 function checkIntroDoor() {
@@ -534,7 +567,9 @@ function checkIntroDoor() {
 function draw() {
   background(0);
 
-  if (gameState === STATE.START) {
+  if (gameState === STATE.SPLASH) {
+    drawSplashScreen();
+  } else if (gameState === STATE.START) {
     drawIntroScreen();
   } else if (gameState === STATE.PLAYING) {
     updateCamera();
@@ -1063,7 +1098,7 @@ function drawStartScreen() {
 
   let label = "A / D to move, W to jump.\nPress ENTER to start.";
   let labelY = logoY + logoH + 14;
-  textFont("Verdana");
+  textFont("Pixelify Sans");
   textStyle(BOLD);
   textSize(18);
   textLeading(24);
@@ -1107,10 +1142,12 @@ function drawLoseScreen() {
 }
 
 function keyPressed() {
-  if (gameState === STATE.START) {
+  if (gameState === STATE.SPLASH) {
     if (keyCode === ENTER) {
-      loadLevel(0);
-      gameState = STATE.PLAYING;
+      // Camera stays right where the splash shot left it — updateCamera()
+      // in drawIntroScreen() eases it toward the player from here, which
+      // reads as a pan down into the tutorial area.
+      gameState = STATE.START;
     }
   } else if (gameState === STATE.PLAYING) {
     if (keyCode === 78) {
@@ -1125,8 +1162,7 @@ function keyPressed() {
     }
   } else if (gameState === STATE.WIN) {
     if (keyCode === ENTER) {
-      initIntroPlayer();
-      gameState = STATE.START;
+      goToSplash();
     }
   } else if (gameState === STATE.LOSE) {
     if (keyCode === 82) {
@@ -1134,8 +1170,7 @@ function keyPressed() {
       gameState = STATE.PLAYING;
     }
     if (keyCode === ENTER) {
-      initIntroPlayer();
-      gameState = STATE.START;
+      goToSplash();
     }
   }
 }
