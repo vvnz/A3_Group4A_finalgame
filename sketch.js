@@ -196,7 +196,7 @@ const INTRO = {
   door: { x: CANVAS_WIDTH - DOOR_W - 8, y: CANVAS_HEIGHT - DOOR_H - 8 },
 
   // Player spawns just above the deck
-  playerStart: { x: 490, y: 400 },
+  playerStart: { x: 490, y: 420 },
 };
 
 // Fixed camera framing for the splash/title screen — the upper part of the
@@ -210,6 +210,16 @@ const SPLASH_ZOOM = 1.6; // independent of CAMERA.zoom, used for levels/tutorial
 // upper-left instead of dead center, while still being followed exactly
 // the same way (see updateCamera()'s anchorX/anchorY params).
 const INTRO_CAMERA_ANCHOR = { x: CANVAS_WIDTH * 0.32, y: CANVAS_HEIGHT * 0.32 };
+
+// The anchor/zoom actually used to render the intro each frame. During the
+// pan these ease from the splash's composition (centered, SPLASH_ZOOM)
+// toward the tutorial's (INTRO_CAMERA_ANCHOR, CAMERA.zoom) at the same rate
+// as the position lerp, so nothing about the framing snaps instantly.
+let introView = {
+  anchorX: CANVAS_WIDTH / 2,
+  anchorY: CANVAS_HEIGHT / 2,
+  zoom: SPLASH_ZOOM,
+};
 
 const LEVELS = [
   {
@@ -366,6 +376,9 @@ function goToSplash() {
   camera.x = INTRO_SPLASH_VIEW.x;
   camera.y = INTRO_SPLASH_VIEW.y;
   introPanning = false;
+  introView.anchorX = CANVAS_WIDTH / 2;
+  introView.anchorY = CANVAS_HEIGHT / 2;
+  introView.zoom = SPLASH_ZOOM;
 }
 
 function getIntroColliders() {
@@ -571,20 +584,27 @@ function drawSplashScreen() {
 // which reads as a pan into this area and then tracks the player exactly
 // like a level would.
 function drawIntroScreen() {
-  let anchorX = INTRO_CAMERA_ANCHOR.x;
-  let anchorY = INTRO_CAMERA_ANCHOR.y;
-
   if (introPanning) {
-    updateCamera(INTRO_PAN_SMOOTHING, anchorX, anchorY);
+    // Ease the anchor/zoom toward the tutorial's composition at the same
+    // rate as the position lerp, so the framing itself slides instead of
+    // snapping the instant the pan starts.
+    introView.anchorX = lerp(introView.anchorX, INTRO_CAMERA_ANCHOR.x, INTRO_PAN_SMOOTHING);
+    introView.anchorY = lerp(introView.anchorY, INTRO_CAMERA_ANCHOR.y, INTRO_PAN_SMOOTHING);
+    introView.zoom = lerp(introView.zoom, CAMERA.zoom, INTRO_PAN_SMOOTHING);
+
+    updateCamera(INTRO_PAN_SMOOTHING, introView.anchorX, introView.anchorY);
     // Once the camera has essentially caught up, hand off to the normal
     // (snappier) follow speed for regular tutorial-area movement.
     if (abs(camera.x - player.x) < 1 && abs(camera.y - camera.targetY) < 1) {
       introPanning = false;
+      introView.anchorX = INTRO_CAMERA_ANCHOR.x;
+      introView.anchorY = INTRO_CAMERA_ANCHOR.y;
+      introView.zoom = CAMERA.zoom;
     }
   } else {
-    updateCamera(CAMERA.smoothing, anchorX, anchorY);
+    updateCamera(CAMERA.smoothing, introView.anchorX, introView.anchorY);
   }
-  beginCameraView(CAMERA.zoom, anchorX, anchorY);
+  beginCameraView(introView.zoom, introView.anchorX, introView.anchorY);
 
   drawIntroWorld();
   checkIntroDoor();
