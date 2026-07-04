@@ -48,6 +48,12 @@ const CAMERA = {
   smoothing: 0.08, // 0..1, higher = snappier follow
 };
 
+// Slower easing used only for the one-time splash -> tutorial pan, so it
+// reads as a deliberate cinematic move rather than the snappier in-game
+// follow speed used once the camera has caught up to the player.
+const INTRO_PAN_SMOOTHING = 0.035;
+let introPanning = false;
+
 let camera = {
   x: CANVAS_WIDTH / 2,
   y: CANVAS_HEIGHT / 2,
@@ -60,7 +66,7 @@ function resetCamera() {
   camera.targetY = player.y;
 }
 
-function updateCamera() {
+function updateCamera(smoothing = CAMERA.smoothing) {
   let viewW = CANVAS_WIDTH / CAMERA.zoom;
   let viewH = CANVAS_HEIGHT / CAMERA.zoom;
 
@@ -69,8 +75,8 @@ function updateCamera() {
     camera.targetY = player.y;
   }
 
-  camera.x = lerp(camera.x, player.x, CAMERA.smoothing);
-  camera.y = lerp(camera.y, camera.targetY, CAMERA.smoothing);
+  camera.x = lerp(camera.x, player.x, smoothing);
+  camera.y = lerp(camera.y, camera.targetY, smoothing);
 
   let halfW = viewW / 2;
   let halfH = viewH / 2;
@@ -340,6 +346,7 @@ function goToSplash() {
   gameState = STATE.SPLASH;
   camera.x = INTRO_SPLASH_VIEW.x;
   camera.y = INTRO_SPLASH_VIEW.y;
+  introPanning = false;
 }
 
 function getIntroColliders() {
@@ -545,7 +552,16 @@ function drawSplashScreen() {
 // which reads as a pan into this area and then tracks the player exactly
 // like a level would.
 function drawIntroScreen() {
-  updateCamera();
+  if (introPanning) {
+    updateCamera(INTRO_PAN_SMOOTHING);
+    // Once the camera has essentially caught up, hand off to the normal
+    // (snappier) follow speed for regular tutorial-area movement.
+    if (abs(camera.x - player.x) < 1 && abs(camera.y - camera.targetY) < 1) {
+      introPanning = false;
+    }
+  } else {
+    updateCamera();
+  }
   beginCameraView();
 
   drawIntroWorld();
@@ -1166,6 +1182,7 @@ function keyPressed() {
       // so both axes start easing from the same frame — with a shared
       // lerp rate that traces a straight diagonal instead of a bent path.
       camera.targetY = player.y;
+      introPanning = true;
       gameState = STATE.START;
     }
   } else if (gameState === STATE.PLAYING) {
