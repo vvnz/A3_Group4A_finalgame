@@ -234,6 +234,11 @@ let introView = {
   zoom: SPLASH_ZOOM,
 };
 
+// Logo position — shared between the splash screen and its fade-out once
+// the tutorial begins, so both draw it in exactly the same spot.
+const INTRO_LOGO = { x: CANVAS_WIDTH / 2 - 400, y: CANVAS_HEIGHT / 2 - 260, w: 600 };
+let logoAlpha = 255;
+
 const LEVELS = [
   {
     name: "Level 1 — Learning",
@@ -392,6 +397,7 @@ function goToSplash() {
   introView.anchorX = CANVAS_WIDTH / 2;
   introView.anchorY = CANVAS_HEIGHT / 2;
   introView.zoom = SPLASH_ZOOM;
+  logoAlpha = 255;
 }
 
 function getIntroColliders() {
@@ -572,11 +578,8 @@ function drawSplashScreen() {
 
   push();
   imageMode(CORNER);
-  let logoX = CANVAS_WIDTH / 2 - 400;
-  let logoY = CANVAS_HEIGHT / 2 - 260;
-  let logoW = 600;
-  let logoH = logoW * (imgLogo.height / imgLogo.width);
-  image(imgLogo, logoX, logoY, logoW, logoH);
+  let logoH = INTRO_LOGO.w * (imgLogo.height / imgLogo.width);
+  image(imgLogo, INTRO_LOGO.x, INTRO_LOGO.y, INTRO_LOGO.w, logoH);
   pop();
 
   push();
@@ -603,6 +606,8 @@ function drawIntroScreen() {
     introView.anchorX = lerp(introView.anchorX, INTRO_FULL_VIEW.x, INTRO_ZOOM_OUT_SMOOTHING);
     introView.anchorY = lerp(introView.anchorY, INTRO_FULL_VIEW.y, INTRO_ZOOM_OUT_SMOOTHING);
     introView.zoom = lerp(introView.zoom, INTRO_FULL_VIEW_ZOOM, INTRO_ZOOM_OUT_SMOOTHING);
+    logoAlpha = lerp(logoAlpha, 0, INTRO_ZOOM_OUT_SMOOTHING);
+    if (logoAlpha < 1) logoAlpha = 0;
 
     if (
       abs(camera.x - INTRO_FULL_VIEW.x) < 1 &&
@@ -611,6 +616,7 @@ function drawIntroScreen() {
       // Leg 2 begins next frame: ease from the full view into the tutorial.
       introPhase = "panIn";
       camera.targetY = player.y;
+      logoAlpha = 0;
     }
   } else if (introPhase === "panIn") {
     // Ease the anchor/zoom toward the tutorial's composition at the same
@@ -663,6 +669,17 @@ function drawIntroScreen() {
 
   drawCharacter();
   endCameraView();
+
+  // Logo fades out during the zoom-out leg instead of vanishing the
+  // instant the splash screen ends.
+  if (logoAlpha > 0) {
+    push();
+    imageMode(CORNER);
+    tint(255, logoAlpha);
+    let logoH = INTRO_LOGO.w * (imgLogo.height / imgLogo.width);
+    image(imgLogo, INTRO_LOGO.x, INTRO_LOGO.y, INTRO_LOGO.w, logoH);
+    pop();
+  }
 }
 
 function checkIntroDoor() {
