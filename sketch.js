@@ -52,7 +52,11 @@ const CAMERA = {
 // reads as a deliberate cinematic move rather than the snappier in-game
 // follow speed used once the camera has caught up to the player.
 const INTRO_PAN_SMOOTHING = 0.035;
-let introPanning = false;
+
+// The Enter transition is two legs: first ease out to a full, centered
+// view of the whole ship (zoomOut), then ease from there into the
+// tutorial framing on the player (panIn). null = not transitioning.
+let introPhase = null; // null | "zoomOut" | "panIn"
 
 let camera = {
   x: CANVAS_WIDTH / 2,
@@ -196,7 +200,7 @@ const INTRO = {
   door: { x: CANVAS_WIDTH - DOOR_W - 8, y: CANVAS_HEIGHT - DOOR_H - 8 },
 
   // Player spawns just above the deck
-  playerStart: { x: 490, y: 420 },
+  playerStart: { x: 490, y: 430 },
 };
 
 // Fixed camera framing for the splash/title screen — the upper part of the
@@ -210,6 +214,11 @@ const SPLASH_ZOOM = 1.6; // independent of CAMERA.zoom, used for levels/tutorial
 // upper-left instead of dead center, while still being followed exactly
 // the same way (see updateCamera()'s anchorX/anchorY params).
 const INTRO_CAMERA_ANCHOR = { x: CANVAS_WIDTH * 0.32, y: CANVAS_HEIGHT * 0.32 };
+
+// The intro world is drawn at exactly the canvas's own dimensions, so a
+// zoom of 1 with a centered camera/anchor shows the entire background.
+const INTRO_FULL_VIEW_ZOOM = 1;
+const INTRO_FULL_VIEW = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 };
 
 // The anchor/zoom actually used to render the intro each frame. During the
 // pan these ease from the splash's composition (centered, SPLASH_ZOOM)
@@ -375,7 +384,7 @@ function goToSplash() {
   gameState = STATE.SPLASH;
   camera.x = INTRO_SPLASH_VIEW.x;
   camera.y = INTRO_SPLASH_VIEW.y;
-  introPanning = false;
+  introPhase = null;
   introView.anchorX = CANVAS_WIDTH / 2;
   introView.anchorY = CANVAS_HEIGHT / 2;
   introView.zoom = SPLASH_ZOOM;
@@ -568,14 +577,11 @@ function drawSplashScreen() {
 
   push();
   textAlign(CENTER, CENTER);
-  textSize(24);
+  textSize(34);
   strokeWeight(4);
   stroke(0);
-  fill(0);
-  text("Press ENTER to start", CANVAS_WIDTH / 2, CANVAS_HEIGHT - 60);
-  noStroke();
-  fill(255);
-  text("Press ENTER to start", CANVAS_WIDTH / 2, CANVAS_HEIGHT - 60);
+  fill(254, 232, 198);
+  text("Press ENTER to start", CANVAS_WIDTH / 2 - 200, CANVAS_HEIGHT - 300);
   pop();
 }
 
@@ -584,19 +590,45 @@ function drawSplashScreen() {
 // which reads as a pan into this area and then tracks the player exactly
 // like a level would.
 function drawIntroScreen() {
-  if (introPanning) {
+  if (introPhase === "zoomOut") {
+    // Leg 1: ease out to a full, centered view of the whole ship. Camera
+    // position, anchor, and zoom all ease toward the same fixed target so
+    // the framing slides as one, not player-tracking yet.
+    camera.x = lerp(camera.x, INTRO_FULL_VIEW.x, INTRO_PAN_SMOOTHING);
+    camera.y = lerp(camera.y, INTRO_FULL_VIEW.y, INTRO_PAN_SMOOTHING);
+    introView.anchorX = lerp(introView.anchorX, INTRO_FULL_VIEW.x, INTRO_PAN_SMOOTHING);
+    introView.anchorY = lerp(introView.anchorY, INTRO_FULL_VIEW.y, INTRO_PAN_SMOOTHING);
+    introView.zoom = lerp(introView.zoom, INTRO_FULL_VIEW_ZOOM, INTRO_PAN_SMOOTHING);
+
+    if (
+      abs(camera.x - INTRO_FULL_VIEW.x) < 1 &&
+      abs(camera.y - INTRO_FULL_VIEW.y) < 1
+    ) {
+      // Leg 2 begins next frame: ease from the full view into the tutorial.
+      introPhase = "panIn";
+      camera.targetY = player.y;
+    }
+  } else if (introPhase === "panIn") {
     // Ease the anchor/zoom toward the tutorial's composition at the same
     // rate as the position lerp, so the framing itself slides instead of
     // snapping the instant the pan starts.
-    introView.anchorX = lerp(introView.anchorX, INTRO_CAMERA_ANCHOR.x, INTRO_PAN_SMOOTHING);
-    introView.anchorY = lerp(introView.anchorY, INTRO_CAMERA_ANCHOR.y, INTRO_PAN_SMOOTHING);
+    introView.anchorX = lerp(
+      introView.anchorX,
+      INTRO_CAMERA_ANCHOR.x,
+      INTRO_PAN_SMOOTHING,
+    );
+    introView.anchorY = lerp(
+      introView.anchorY,
+      INTRO_CAMERA_ANCHOR.y,
+      INTRO_PAN_SMOOTHING,
+    );
     introView.zoom = lerp(introView.zoom, CAMERA.zoom, INTRO_PAN_SMOOTHING);
 
     updateCamera(INTRO_PAN_SMOOTHING, introView.anchorX, introView.anchorY);
     // Once the camera has essentially caught up, hand off to the normal
     // (snappier) follow speed for regular tutorial-area movement.
     if (abs(camera.x - player.x) < 1 && abs(camera.y - camera.targetY) < 1) {
-      introPanning = false;
+      introPhase = null;
       introView.anchorX = INTRO_CAMERA_ANCHOR.x;
       introView.anchorY = INTRO_CAMERA_ANCHOR.y;
       introView.zoom = CAMERA.zoom;
@@ -1217,14 +1249,10 @@ function drawLoseScreen() {
 function keyPressed() {
   if (gameState === STATE.SPLASH) {
     if (keyCode === ENTER) {
-      // Camera stays right where the splash shot left it — updateCamera()
-      // in drawIntroScreen() eases it toward the player from here, which
-      // reads as a pan down into the tutorial area. Sync the vertical
-      // target to the player's current (already-settled) position now,
-      // so both axes start easing from the same frame — with a shared
-      // lerp rate that traces a straight diagonal instead of a bent path.
-      camera.targetY = player.y;
-      introPanning = true;
+      // Camera stays right where the splash shot left it — drawIntroScreen()
+      // eases it out to a full view of the ship first, then into the
+      // tutorial framing on the player.
+      introPhase = "zoomOut";
       gameState = STATE.START;
     }
   } else if (gameState === STATE.PLAYING) {
