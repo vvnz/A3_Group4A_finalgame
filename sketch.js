@@ -44,9 +44,23 @@ const PHYSICS = {
 // player continuously; vertical position only re-targets when the player
 // is standing on solid ground, so jumping doesn't drag the screen up/down.
 const CAMERA = {
-  zoom: 1.7,
+  zoom: 1.9,
   smoothing: 0.08, // 0..1, higher = snappier follow
 };
+
+// Slower easing used only for the one-time splash -> tutorial pan, so it
+// reads as a deliberate cinematic move rather than the snappier in-game
+// follow speed used once the camera has caught up to the player.
+const INTRO_PAN_SMOOTHING = 0.035;
+
+// Faster than INTRO_PAN_SMOOTHING — only used for the zoom-out-to-full-view
+// leg, so that leg is quicker while the pan into the tutorial stays slow.
+const INTRO_ZOOM_OUT_SMOOTHING = 0.09;
+
+// The Enter transition is two legs: first ease out to a full, centered
+// view of the whole ship (zoomOut), then ease from there into the
+// tutorial framing on the player (panIn). null = not transitioning.
+let introPhase = null; // null | "zoomOut" | "panIn"
 
 let camera = {
   x: CANVAS_WIDTH / 2,
@@ -60,25 +74,40 @@ function resetCamera() {
   camera.targetY = player.y;
 }
 
-function updateCamera() {
-  let viewW = CANVAS_WIDTH / CAMERA.zoom;
-  let viewH = CANVAS_HEIGHT / CAMERA.zoom;
-
+// anchorX/anchorY is the screen point the tracked position renders at —
+// defaults to dead center (used by levels and the splash screen). Passing
+// an off-center anchor (e.g. for the intro tutorial) keeps the exact same
+// follow/lerp behavior, just renders the player somewhere else on screen.
+function updateCamera(
+  smoothing = CAMERA.smoothing,
+  anchorX = CANVAS_WIDTH / 2,
+  anchorY = CANVAS_HEIGHT / 2,
+  zoom = CAMERA.zoom,
+) {
   // Only re-target vertically when grounded, so jumps/falls don't pan the camera.
   if (player.onGround) {
     camera.targetY = player.y;
   }
 
-  camera.x = lerp(camera.x, player.x, CAMERA.smoothing);
-  camera.y = lerp(camera.y, camera.targetY, CAMERA.smoothing);
+  camera.x = lerp(camera.x, player.x, smoothing);
+  camera.y = lerp(camera.y, camera.targetY, smoothing);
 
-  let halfW = viewW / 2;
-  let halfH = viewH / 2;
-  camera.x = constrain(camera.x, halfW, CANVAS_WIDTH - halfW);
-  camera.y = constrain(camera.y, halfH, CANVAS_HEIGHT - halfH);
+  // World units visible on each side of camera.x/y given the anchor split —
+  // symmetric halves when anchor is centered, matching the old behavior.
+  let leftW = anchorX / zoom;
+  let rightW = (CANVAS_WIDTH - anchorX) / zoom;
+  let topH = anchorY / zoom;
+  let bottomH = (CANVAS_HEIGHT - anchorY) / zoom;
+
+  camera.x = constrain(camera.x, leftW, CANVAS_WIDTH - rightW);
+  camera.y = constrain(camera.y, topH, CANVAS_HEIGHT - bottomH);
 }
 
-function beginCameraView() {
+function beginCameraView(
+  zoom = CAMERA.zoom,
+  anchorX = CANVAS_WIDTH / 2,
+  anchorY = CANVAS_HEIGHT / 2,
+) {
   // Seasickness sway — a gentle wobble layered on top of the followed
   // position at render time only, so it doesn't feed back into the
   // camera's own follow/lerp state.
@@ -91,8 +120,8 @@ function beginCameraView() {
   }
 
   push();
-  translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
-  scale(CAMERA.zoom);
+  translate(anchorX, anchorY);
+  scale(zoom);
   translate(-(camera.x + wobbleX), -(camera.y + wobbleY));
 }
 
@@ -101,6 +130,7 @@ function endCameraView() {
 }
 
 const STATE = {
+  SPLASH: "splash",
   START: "start",
   PLAYING: "playing",
   FAINTING: "fainting",
@@ -121,7 +151,7 @@ const RAT_SPEED = 2.4; // patrol speed in pixels per frame — adjust to taste
 const RAT_SIZE = 32; // display size on canvas
 
 const SEASICK_MAX = 100;
-const SEASICK_RATE = 0.3; // gain per frame while moving
+const SEASICK_RATE = 0.23; // gain per frame while moving
 const SEASICK_DECAY = 0.005; // loss per frame while still
 const FAINT_FLASHES = 6; // total flash count before restart
 const FAINT_FLASH_FRAMES = 12; // frames per flash
@@ -131,21 +161,47 @@ const FAINT_FLASH_FRAMES = 12; // frames per flash
 const SEASICK_LAG_TIER1 = SEASICK_MAX / 3;
 const SEASICK_LAG_TIER2 = (SEASICK_MAX * 2) / 3;
 const SEASICK_LAG_TIERS = [
-  { threshold: SEASICK_LAG_TIER2, speedMultiplier: 0.7, wobbleAmp: 3, wobbleFreq: 0.22 }, // 2/3 full
-  { threshold: SEASICK_LAG_TIER1, speedMultiplier: 0.9, wobbleAmp: 1.5, wobbleFreq: 0.16 }, // 1/3 full
+  {
+    threshold: SEASICK_LAG_TIER2,
+    speedMultiplier: 0.7,
+    wobbleAmp: 3,
+    wobbleFreq: 0.22,
+  }, // 2/3 full
+  {
+    threshold: SEASICK_LAG_TIER1,
+    speedMultiplier: 0.9,
+    wobbleAmp: 1.5,
+    wobbleFreq: 0.16,
+  }, // 1/3 full
 ];
 
 // Returns the active tier config for the player's current seasickness, or null.
 function getSeasickTier() {
-  return SEASICK_LAG_TIERS.find((t) => player.seasickness >= t.threshold) || null;
+  return (
+    SEASICK_LAG_TIERS.find((t) => player.seasickness >= t.threshold) || null
+  );
 }
+
+// ── Screen shake state ──────────────────────────────────────────────────────
+let screenShakeIntensity = 0;
+let screenShakeTimer = 0;
+
+// ── Dialogue system state ───────────────────────────────────────────────────
+let dialogueActive = false;
+let dialogueCompleted = false;
+let dialogueIndex = 0;
+let dialogueCharIndex = 0;
+let dialoguePageOffset = 0;
+let dialogueLinesPerPage = 6;
+let dialogueFrameCounter = 0;
+const DIALOGUE_FRAMES_PER_CHAR = 2;
 
 // ── Intro / start-screen ship scene ────────────────────────────────────────
 const INTRO = {
   // The deck platform the player stands on (tiled with platform_tile.png)
   // x: horizontal position, y: vertical position
   // tilesW: width in tiles, tilesH: height in tiles (each tile is 16px)
-  platform: { x: 480, y: 464, tilesW: 16, tilesH: 1 },
+  platform: { x: 480, y: 500, tilesW: 16, tilesH: 1 },
   platform2: { x: 565, y: CANVAS_HEIGHT - 16, tilesW: 26, tilesH: 1 }, // right half, bottom
 
   // Outer-shell walls — stepped rectangles tracing the curved hull left edge.
@@ -157,15 +213,94 @@ const INTRO = {
   ],
 
   // Decorations — positioned on the deck inside the hull boundary
-  hammock: { x: 540, y: 380, w: 140, h: 75 },
-  parrot: { x: 590, y: 380, w: 48, h: 48 },
+  hammock: { x: 500, y: 386, w: 200, h: 120 },
 
-  // Door at the bottom-right; press E near it to enter Level 1
+  // Door at the bottom-right; opens automatically once the player reaches it
   door: { x: CANVAS_WIDTH - DOOR_W - 8, y: CANVAS_HEIGHT - DOOR_H - 8 },
 
   // Player spawns just above the deck
-  playerStart: { x: 490, y: 400 },
+  playerStart: { x: 490, y: 430 },
 };
+
+// ── Intro dialogue lines ────────────────────────────────────────────────────
+const INTRO_DIALOGUE = [
+  { speaker: "PARROT", text: "*SQUAWK* Quiet morning… Hm…" },
+  { speaker: "PLAYER", text: "What are you on about?" },
+  {
+    speaker: "DIALOGUE",
+    text: "Harmonious singing echoes from the end of the ship, the [redacted]",
+  },
+  {
+    speaker: "DIALOGUE",
+    text: "It grows in volume, ringing through your head, but you can hardly think.",
+  },
+  { speaker: "DIALOGUE", text: "*THUMP THUMP*" },
+  { speaker: "DIALOGUE", text: "*BIG SPLASH*" },
+  { speaker: "PLAYER", text: "Wait wuh? What was that?" },
+  {
+    speaker: "PARROT",
+    text: "*CAW CAW* Sirens spotted at starboard, crew gone overboard!",
+  },
+  { speaker: "PLAYER", text: "Wait, what? Everyone?" },
+  { speaker: "PLAYER", text: "…" },
+  { speaker: "PLAYER", text: "Then who's at the helm??" },
+  {
+    speaker: "PARROT",
+    text: "*CAW* No one, you empty bucket! It's time to earn your sea legs!",
+  },
+  {
+    speaker: "PARROT",
+    text: "What are you waiting for? Get to the helm before we feed the fish!",
+  },
+  {
+    speaker: "PARROT",
+    text: "Use A <- and D -> to move left and right, and space to jump.",
+  },
+  { speaker: "PLAYER", text: "Argh, but I'm gonna get so seasick!" },
+];
+
+// Fixed camera framing for the splash/title screen — the upper part of the
+// ship (trees + railing). The tutorial framing isn't a separate constant:
+// it's just wherever the player spawns, since updateCamera() eases toward
+// the player once STATE.START begins, producing the pan.
+const INTRO_SPLASH_VIEW = { x: 270, y: 180 };
+const SPLASH_ZOOM = 1.6; // independent of CAMERA.zoom, used for levels/tutorial
+
+// Screen anchor for the tutorial phase — the player renders toward the
+// upper-left instead of dead center, while still being followed exactly
+// the same way (see updateCamera()'s anchorX/anchorY params).
+const INTRO_CAMERA_ANCHOR = { x: CANVAS_WIDTH * 0.32, y: CANVAS_HEIGHT * 0.32 };
+
+// Independent of CAMERA.zoom (used for actual levels). The deck sits close
+// to the world's bottom edge, so at CAMERA.zoom the camera has to stay
+// pinned there to keep the player below the anchor point, which caps the
+// view well short of the railing above. A lower zoom here shows more of
+// the world vertically, revealing the railing/sky above the deck.
+const INTRO_TUTORIAL_ZOOM = 1.4;
+
+// The intro world is drawn at exactly the canvas's own dimensions, so a
+// zoom of 1 with a centered camera/anchor shows the entire background.
+const INTRO_FULL_VIEW_ZOOM = 1;
+const INTRO_FULL_VIEW = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 };
+
+// The anchor/zoom actually used to render the intro each frame. During the
+// pan these ease from the splash's composition (centered, SPLASH_ZOOM)
+// toward the tutorial's (INTRO_CAMERA_ANCHOR, CAMERA.zoom) at the same rate
+// as the position lerp, so nothing about the framing snaps instantly.
+let introView = {
+  anchorX: CANVAS_WIDTH / 2,
+  anchorY: CANVAS_HEIGHT / 2,
+  zoom: SPLASH_ZOOM,
+};
+
+// Logo position — shared between the splash screen and its fade-out once
+// the tutorial begins, so both draw it in exactly the same spot.
+const INTRO_LOGO = {
+  x: CANVAS_WIDTH / 2 - 400,
+  y: CANVAS_HEIGHT / 2 - 260,
+  w: 600,
+};
+let logoAlpha = 255;
 
 const LEVELS = [
   {
@@ -208,7 +343,7 @@ const LEVELS = [
     ],
     spikes: [{ x: 432, y: 352, tilesW: 17 }],
     rat: { minX: 300, maxX: 455 },
-    spawnDoor: { x: 13, y: 228 },
+    spawnDoor: { x: 13, y: 227 },
     exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
   },
   {
@@ -259,9 +394,13 @@ let imgBarrel;
 let imgDoorClosed;
 let imgDoorOpen;
 let imgHammock;
-let imgParrot;
 let imgLantern;
 let imgPlatformTile;
+let imgDialogueGeneric;
+let imgDialogueParrot;
+let imgDialoguePirate;
+let soundBGM;
+let soundSeagulls;
 let exitDoorOpen = false;
 let introDoorOpen = false;
 let winDelayTimer = 0;
@@ -278,9 +417,13 @@ function preload() {
   imgDoorClosed = loadImage("assets/images/doorclose.png");
   imgDoorOpen = loadImage("assets/images/dooropen.png");
   imgHammock = loadImage("assets/images/hammock.png");
-  imgParrot = loadImage("assets/images/parrot.png");
   imgLantern = loadImage("assets/images/lantern.png");
   imgPlatformTile = loadImage("assets/images/platform_tile.png");
+  imgDialogueGeneric = loadImage("assets/images/dialogue.png");
+  imgDialogueParrot = loadImage("assets/images/parrot_dialogue.png");
+  imgDialoguePirate = loadImage("assets/images/pirate_dialogue.png");
+  soundBGM = loadSound("assets/sounds/bgm.mp3");
+  soundSeagulls = loadSound("assets/sounds/seagulls.mp3");
 
   for (let i = 0; i < LEVELS.length; i++) {
     if (LEVELS[i].background) {
@@ -294,8 +437,29 @@ function preload() {
 function setup() {
   createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   imageMode(CENTER);
-  textFont("monospace");
-  initIntroPlayer();
+  textFont("Pixelify Sans");
+  goToSplash();
+}
+
+// ── Sound management ───────────────────────────────────────────────────────
+// Call this whenever the game state changes. Stops the previous track and
+// starts the right one for the new state. Only plays the seagulls during
+// the splash / title screen; everywhere else (START, PLAYING, FAINTING,
+// WIN, LOSE) the BGM loop runs uninterrupted.
+function updateSounds() {
+  if (soundSeagulls?.isPlaying()) soundSeagulls.stop();
+  if (soundBGM?.isPlaying()) soundBGM.stop();
+
+  if (gameState === STATE.START) {
+    // Seagulls play during the intro / tutorial while the player is
+    // walking around on the ship deck.
+    soundSeagulls.loop();
+  } else if (gameState !== STATE.SPLASH) {
+    // Everything non-splash / non-start gets BGM: PLAYING, FAINTING,
+    // WIN, LOSE all keep the same music looping.
+    soundBGM.loop();
+  }
+  // SPLASH — silence, no conflict with browser autoplay.
 }
 
 // ── Intro scene helpers ─────────────────────────────────────────────────────
@@ -315,6 +479,29 @@ function initIntroPlayer() {
   player.visible = true;
   introDoorOpen = false;
   introDelayTimer = 0;
+}
+
+// Resets to the very beginning: the fixed splash/title framing.
+function goToSplash() {
+  initIntroPlayer();
+  gameState = STATE.SPLASH;
+  updateSounds();
+  camera.x = INTRO_SPLASH_VIEW.x;
+  camera.y = INTRO_SPLASH_VIEW.y;
+  introPhase = null;
+  introView.anchorX = CANVAS_WIDTH / 2;
+  introView.anchorY = CANVAS_HEIGHT / 2;
+  introView.zoom = SPLASH_ZOOM;
+  logoAlpha = 255;
+  // Reset dialogue state so it replays on a fresh start
+  dialogueActive = false;
+  dialogueCompleted = false;
+  dialogueIndex = 0;
+  dialogueCharIndex = 0;
+  dialoguePageOffset = 0;
+  dialogueFrameCounter = 0;
+  screenShakeIntensity = 0;
+  screenShakeTimer = 0;
 }
 
 function getIntroColliders() {
@@ -392,40 +579,15 @@ function applyIntroPhysics() {
   }
 }
 
-function drawIntroScreen() {
-  // Background
+// Everything about the ship-deck world that's shared between the fixed
+// splash framing and the interactive tutorial framing — both are just the
+// same background/decorations/door viewed through a different camera shot.
+function drawIntroWorld() {
   push();
   imageMode(CORNER);
   image(imgIntroBg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   pop();
 
-  // Logo in upper left
-  push();
-  imageMode(CORNER);
-  let logoX = 40;
-  let logoY = 25;
-  let logoW = 400;
-  let logoH = logoW * (imgLogo.height / imgLogo.width);
-  image(imgLogo, logoX, logoY, logoW, logoH);
-  pop();
-
-  // Instructions
-  push();
-  textFont("Verdana");
-  textSize(14);
-  textAlign(LEFT, TOP);
-  strokeWeight(3);
-  stroke(0);
-  fill(0);
-  text("A / D to move, W to jump", logoX, logoY + logoH + 20);
-  text("Press E to interact", logoX, logoY + logoH + 40);
-  noStroke();
-  fill(255);
-  text("A / D to move, W to jump", logoX, logoY + logoH + 20);
-  text("Press E to interact", logoX, logoY + logoH + 40);
-  pop();
-
-  // Decorations (behind player)
   push();
   imageMode(CORNER);
   image(
@@ -434,13 +596,6 @@ function drawIntroScreen() {
     INTRO.hammock.y,
     INTRO.hammock.w,
     INTRO.hammock.h,
-  );
-  image(
-    imgParrot,
-    INTRO.parrot.x,
-    INTRO.parrot.y,
-    INTRO.parrot.w,
-    INTRO.parrot.h,
   );
   pop();
 
@@ -488,7 +643,7 @@ function drawIntroScreen() {
     pop();
   }
 
-  // Door — opens when E is pressed
+  // Door — opens automatically once the player overlaps it
   push();
   imageMode(CORNER);
   image(
@@ -499,37 +654,430 @@ function drawIntroScreen() {
     DOOR_H,
   );
   pop();
+}
 
-  // Interaction prompt above door (only when door is closed)
-  if (!introDoorOpen) {
-    let promptX = INTRO.door.x + DOOR_W / 2;
-    let promptY = INTRO.door.y - 20;
-    drawInteractionPrompt(promptX, promptY);
+// Title card — a fixed zoomed-in shot of the upper part of the ship (same
+// zoom the levels use), with the logo and prompt overlaid on top, unzoomed.
+function drawSplashScreen() {
+  // Clamped the same way updateCamera() clamps the level camera, so this
+  // fixed framing stays within the world bounds regardless of zoom.
+  let halfW = CANVAS_WIDTH / SPLASH_ZOOM / 2;
+  let halfH = CANVAS_HEIGHT / SPLASH_ZOOM / 2;
+  camera.x = constrain(INTRO_SPLASH_VIEW.x, halfW, CANVAS_WIDTH - halfW);
+  camera.y = constrain(INTRO_SPLASH_VIEW.y, halfH, CANVAS_HEIGHT - halfH);
+
+  beginCameraView(SPLASH_ZOOM);
+  drawIntroWorld();
+
+  // Let the player fall and settle onto the deck during the splash screen
+  // (no input yet) so it's already standing there once the pan starts,
+  // instead of popping in or still visibly falling mid-pan.
+  resolveIntroCollisions();
+  applyIntroPhysics();
+  clampToBounds();
+  animateSprite();
+  drawCharacter();
+
+  endCameraView();
+
+  push();
+  imageMode(CORNER);
+  let logoH = INTRO_LOGO.w * (imgLogo.height / imgLogo.width);
+  image(imgLogo, INTRO_LOGO.x, INTRO_LOGO.y, INTRO_LOGO.w, logoH);
+  pop();
+
+  push();
+  textAlign(CENTER, CENTER);
+  textSize(34);
+  strokeWeight(6);
+  stroke(0);
+  fill(255);
+  text("Press ENTER to start", CANVAS_WIDTH / 2 - 200, CANVAS_HEIGHT - 300);
+  pop();
+}
+
+// ── Dialogue system ─────────────────────────────────────────────────────────
+
+// Returns the correct dialogue box image for a given speaker.
+function currentDialogueImage(speaker) {
+  if (speaker === "PARROT") return imgDialogueParrot;
+  if (speaker === "PLAYER") return imgDialoguePirate;
+  return imgDialogueGeneric;
+}
+
+// Wraps text into lines that fit within maxWidth using the dialogue font.
+function wrapTextForDialogue(txt, maxWidth) {
+  push();
+  textFont("Pixelify Sans");
+  textSize(30);
+  let words = txt.split(" ");
+  let lines = [];
+  let currentLine = "";
+
+  for (let word of words) {
+    let testLine = currentLine ? currentLine + " " + word : word;
+    if (textWidth(testLine) > maxWidth && currentLine.length > 0) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
   }
+  if (currentLine.length > 0) lines.push(currentLine);
+  pop();
+  return lines;
+}
+
+// Starts a new dialogue sequence with the given lines.
+function startDialogue(lines) {
+  dialogueActive = true;
+  dialogueIndex = 0;
+  dialogueCharIndex = 0;
+  dialoguePageOffset = 0;
+  dialogueFrameCounter = 0;
+
+  let line = lines[0];
+  let padTop = 45;
+  let padBottom = 45;
+  let textAreaH = 200 * 0.95 - padTop - padBottom;
+  dialogueLinesPerPage = floor(textAreaH / 40);
+
+  // Trigger screen shake for the BIG SPLASH line if it's the first line
+  if (line.text === "*BIG SPLASH*") {
+    screenShakeIntensity = 8;
+    screenShakeTimer = 30;
+  }
+}
+
+// Handles Enter key during dialogue: finish typing or advance to next line.
+function advanceDialogue() {
+  if (!dialogueActive || dialogueIndex >= INTRO_DIALOGUE.length) return;
+
+  let line = INTRO_DIALOGUE[dialogueIndex];
+  let isChar = line.speaker === "PARROT" || line.speaker === "PLAYER";
+  let padLeft = isChar ? 100 : 45;
+  let padRight = 45;
+  let boxW = (CANVAS_WIDTH - 80) * 0.95;
+  let maxTextW = boxW - padLeft - padRight;
+  let wrappedLines = wrapTextForDialogue(line.text, maxTextW);
+
+  if (dialogueCharIndex < line.text.length) {
+    // Still typing — finish instantly
+    dialogueCharIndex = line.text.length;
+    dialoguePageOffset = 0;
+  } else {
+    // Fully typed — check for more pages
+    if (dialoguePageOffset + dialogueLinesPerPage < wrappedLines.length) {
+      dialoguePageOffset += dialogueLinesPerPage;
+    } else {
+      // Move to next dialogue line
+      dialogueIndex++;
+      if (dialogueIndex >= INTRO_DIALOGUE.length) {
+        // Dialogue finished
+        dialogueActive = false;
+        dialogueCompleted = true;
+        return;
+      }
+      dialogueCharIndex = 0;
+      dialoguePageOffset = 0;
+      dialogueFrameCounter = 0;
+
+      // Check for special effects on the new line
+      let nextLine = INTRO_DIALOGUE[dialogueIndex];
+      if (nextLine.text === "*BIG SPLASH*") {
+        screenShakeIntensity = 8;
+        screenShakeTimer = 30;
+      }
+    }
+  }
+}
+
+// Draws the dialogue box in screen-space at the bottom of the screen.
+function drawDialogueBox() {
+  if (!dialogueActive || dialogueIndex >= INTRO_DIALOGUE.length) return;
+
+  let line = INTRO_DIALOGUE[dialogueIndex];
+  let img = currentDialogueImage(line.speaker);
+  let isCharacter = line.speaker === "PARROT" || line.speaker === "PLAYER";
+
+  // Box dimensions (scaled to 0.95, top edge pinned)
+  let boxW = (CANVAS_WIDTH - 80) * 0.95;
+  let boxH = 200 * 0.95;
+  let boxX = (CANVAS_WIDTH - boxW) / 2;
+  let boxY = CANVAS_HEIGHT - 200; // keep original top Y
+
+  // Draw background image
+  push();
+  imageMode(CORNER);
+  image(img, boxX, boxY, boxW, boxH);
+  pop();
+
+  // Text area padding — leave breathing room for centering
+  let padLeft = isCharacter ? 220 : 75;
+  let padRight = 45;
+  let padTop = 45;
+  let padBottom = 45;
+
+  // Horizontally center: draw at the midpoint of the text area
+  let maxTextW = boxW - padLeft - padRight;
+  let textX = boxX + padLeft;
+  let textY = boxY + padTop; // vertOffset added after wrapping below
+
+  // Wrap text into visual lines
+  let wrappedLines = wrapTextForDialogue(line.text, maxTextW);
+
+  // Vertically center based on how many lines fit on this page
+  let textAreaH = boxH - padTop - padBottom;
+  let pageLineCount = min(
+    wrappedLines.length - dialoguePageOffset,
+    dialogueLinesPerPage,
+  );
+  let actualTextHeight = pageLineCount * 40;
+  let vertOffset = max(0, (textAreaH - actualTextHeight) / 2);
+  textY += vertOffset;
+
+  // Typewriter effect — advance one character every ~2 frames
+  dialogueFrameCounter++;
+  if (dialogueFrameCounter >= DIALOGUE_FRAMES_PER_CHAR) {
+    dialogueFrameCounter = 0;
+    if (dialogueCharIndex < line.text.length) {
+      dialogueCharIndex++;
+    }
+  }
+
+  // Build cumulative character counts per wrapped line
+  let cumChars = [];
+  let cum = 0;
+  for (let i = 0; i < wrappedLines.length; i++) {
+    cum += wrappedLines[i].length;
+    cumChars.push(cum);
+  }
+
+  // Determine which lines to show on the current page,
+  // clipped by the typewriter character count.
+  let charsConsumed =
+    dialoguePageOffset > 0 ? cumChars[dialoguePageOffset - 1] : 0;
+  let visibleLines = [];
+  for (
+    let i = dialoguePageOffset;
+    i < min(dialoguePageOffset + dialogueLinesPerPage, wrappedLines.length);
+    i++
+  ) {
+    let lineLen = wrappedLines[i].length;
+    if (dialogueCharIndex <= charsConsumed) break;
+    let showChars = min(dialogueCharIndex - charsConsumed, lineLen);
+    visibleLines.push(wrappedLines[i].substring(0, showChars));
+    charsConsumed += lineLen;
+  }
+
+  // Text shake for "Then who's at the helm??"
+  let shakeX = 0;
+  let shakeY = 0;
+  if (
+    line.text === "Then who's at the helm??" &&
+    dialogueCharIndex >= line.text.length
+  ) {
+    shakeX = random(-1.5, 1.5);
+    shakeY = random(-1.5, 1.5);
+  }
+
+  // Draw text — left-aligned, block is vertically/horizontally centered
+  push();
+  textFont("Pixelify Sans");
+  textSize(30);
+  textLeading(40);
+  fill(60, 40, 20);
+  noStroke();
+  for (let i = 0; i < visibleLines.length; i++) {
+    text(visibleLines[i], textX + shakeX, textY + i * 40 + shakeY);
+  }
+  pop();
+
+  // Advance indicator when fully typed and on the last page
+  let fullyTyped = dialogueCharIndex >= line.text.length;
+  let lastPage =
+    dialoguePageOffset + dialogueLinesPerPage >= wrappedLines.length;
+  if (fullyTyped && lastPage) {
+    let arrowAlpha = 160 + sin(frameCount * 0.1) * 60;
+    push();
+    textFont("Pixelify Sans");
+    textSize(14);
+    fill(60, 40, 20, arrowAlpha);
+    textAlign(RIGHT, BOTTOM);
+    text("▼", boxX + boxW - 24, boxY + boxH - 14);
+    pop();
+  }
+}
+
+// Interactive ship-deck tutorial — camera starts wherever the splash shot
+// left it and eases toward the player via the normal updateCamera() lerp,
+// which reads as a pan into this area and then tracks the player exactly
+// like a level would.
+function drawIntroScreen() {
+  if (introPhase === "zoomOut") {
+    // Leg 1: ease out to a full, centered view of the whole ship. Camera
+    // position, anchor, and zoom all ease toward the same fixed target so
+    // the framing slides as one, not player-tracking yet.
+    camera.x = lerp(camera.x, INTRO_FULL_VIEW.x, INTRO_ZOOM_OUT_SMOOTHING);
+    camera.y = lerp(camera.y, INTRO_FULL_VIEW.y, INTRO_ZOOM_OUT_SMOOTHING);
+    introView.anchorX = lerp(
+      introView.anchorX,
+      INTRO_FULL_VIEW.x,
+      INTRO_ZOOM_OUT_SMOOTHING,
+    );
+    introView.anchorY = lerp(
+      introView.anchorY,
+      INTRO_FULL_VIEW.y,
+      INTRO_ZOOM_OUT_SMOOTHING,
+    );
+    introView.zoom = lerp(
+      introView.zoom,
+      INTRO_FULL_VIEW_ZOOM,
+      INTRO_ZOOM_OUT_SMOOTHING,
+    );
+    logoAlpha = lerp(logoAlpha, 0, INTRO_ZOOM_OUT_SMOOTHING);
+    if (logoAlpha < 1) logoAlpha = 0;
+
+    if (
+      abs(camera.x - INTRO_FULL_VIEW.x) < 1 &&
+      abs(camera.y - INTRO_FULL_VIEW.y) < 1
+    ) {
+      // Leg 2 begins next frame: ease from the full view into the tutorial.
+      introPhase = "panIn";
+      camera.targetY = player.y;
+      logoAlpha = 0;
+    }
+  } else if (introPhase === "panIn") {
+    // Ease the anchor/zoom toward the tutorial's composition at the same
+    // rate as the position lerp, so the framing itself slides instead of
+    // snapping the instant the pan starts.
+    introView.anchorX = lerp(
+      introView.anchorX,
+      INTRO_CAMERA_ANCHOR.x,
+      INTRO_PAN_SMOOTHING,
+    );
+    introView.anchorY = lerp(
+      introView.anchorY,
+      INTRO_CAMERA_ANCHOR.y,
+      INTRO_PAN_SMOOTHING,
+    );
+    introView.zoom = lerp(
+      introView.zoom,
+      INTRO_TUTORIAL_ZOOM,
+      INTRO_PAN_SMOOTHING,
+    );
+
+    let prevCamX = camera.x;
+    let prevCamY = camera.y;
+    updateCamera(
+      INTRO_PAN_SMOOTHING,
+      introView.anchorX,
+      introView.anchorY,
+      introView.zoom,
+    );
+    // Once the camera has essentially stopped moving, hand off to the
+    // normal (snappier) follow speed for regular tutorial-area movement.
+    // Checking convergence (not distance to the raw target) matters here:
+    // the vertical target can sit past what the anchor/zoom clamp allows
+    // (the deck is close to the world's bottom edge), so camera.y settles
+    // at the clamp boundary rather than literally reaching camera.targetY.
+    if (abs(camera.x - prevCamX) < 0.05 && abs(camera.y - prevCamY) < 0.05) {
+      introPhase = null;
+      introView.anchorX = INTRO_CAMERA_ANCHOR.x;
+      introView.anchorY = INTRO_CAMERA_ANCHOR.y;
+      introView.zoom = INTRO_TUTORIAL_ZOOM;
+    }
+  } else {
+    updateCamera(
+      CAMERA.smoothing,
+      introView.anchorX,
+      introView.anchorY,
+      introView.zoom,
+    );
+
+    // Start dialogue once the camera has settled
+    if (!dialogueActive && !dialogueCompleted) {
+      startDialogue(INTRO_DIALOGUE);
+    }
+  }
+
+  // Apply screen shake offset to camera before rendering
+  let shakeX = 0;
+  let shakeY = 0;
+  if (screenShakeTimer > 0) {
+    shakeX = random(-screenShakeIntensity, screenShakeIntensity);
+    shakeY = random(-screenShakeIntensity, screenShakeIntensity);
+    screenShakeTimer--;
+    if (screenShakeTimer <= 0) {
+      screenShakeIntensity = 0;
+    }
+  }
+  camera.x += shakeX;
+  camera.y += shakeY;
+
+  beginCameraView(introView.zoom, introView.anchorX, introView.anchorY);
+
+  // Restore camera after applying shake
+  camera.x -= shakeX;
+  camera.y -= shakeY;
+
+  drawIntroWorld();
+  checkIntroDoor();
 
   // Handle intro door delay timer
   if (introDelayTimer > 0) {
     introDelayTimer--;
     if (introDelayTimer === 0) {
+      dialogueActive = false;
+      dialogueCompleted = true;
       loadLevel(0);
       gameState = STATE.PLAYING;
+      updateSounds(); // switch from seagulls to BGM
     }
   }
 
-  // Player physics (runs every frame in STATE.START)
-  handleInput();
+  // Player physics — skip input when dialogue is active
+  if (!dialogueActive) {
+    handleInput();
+  }
   resolveIntroCollisions();
   applyIntroPhysics();
   clampToBounds();
   animateSprite();
-
   drawCharacter();
+  endCameraView();
+
+  // Draw dialogue box in screen-space (after camera view ends)
+  if (dialogueActive) {
+    drawDialogueBox();
+  }
+
+  // Logo fades out during the zoom-out leg instead of vanishing the
+  // instant the splash screen ends.
+  if (logoAlpha > 0) {
+    push();
+    imageMode(CORNER);
+    tint(255, logoAlpha);
+    let logoH = INTRO_LOGO.w * (imgLogo.height / imgLogo.width);
+    image(imgLogo, INTRO_LOGO.x, INTRO_LOGO.y, INTRO_LOGO.w, logoH);
+    pop();
+  }
+}
+
+function checkIntroDoor() {
+  if (introDelayTimer > 0 || introDoorOpen) return;
+  if (playerOverlapsRect(INTRO.door.x, INTRO.door.y, DOOR_W, DOOR_H)) {
+    introDoorOpen = true;
+    introDelayTimer = WIN_DELAY_FRAMES;
+  }
 }
 
 function draw() {
   background(0);
 
-  if (gameState === STATE.START) {
+  if (gameState === STATE.SPLASH) {
+    drawSplashScreen();
+  } else if (gameState === STATE.START) {
     drawIntroScreen();
   } else if (gameState === STATE.PLAYING) {
     updateCamera();
@@ -886,13 +1434,22 @@ function drawSpikes() {
   pop();
 }
 
+// True once the player's hitbox overlaps a rect of the given dimensions
+// (used for door auto-open triggers).
+function playerOverlapsRect(rx, ry, rw, rh) {
+  return (
+    player.x + player.hw > rx &&
+    player.x - player.hw < rx + rw &&
+    player.y + player.hh > ry &&
+    player.y - player.hh < ry + rh
+  );
+}
+
 function checkExitDoor() {
   if (winDelayTimer > 0 || exitDoorOpen) return;
   let level = LEVELS[currentLevel];
   if (!level.exitDoor) return;
-  let ex = level.exitDoor.x + DOOR_W / 2;
-  let ey = level.exitDoor.y + DOOR_H / 2;
-  if (abs(player.x - ex) < 50 && abs(player.y - ey) < 70) {
+  if (playerOverlapsRect(level.exitDoor.x, level.exitDoor.y, DOOR_W, DOOR_H)) {
     exitDoorOpen = true;
     winDelayTimer = EXIT_DELAY_FRAMES;
   }
@@ -1049,7 +1606,7 @@ function drawStartScreen() {
 
   let label = "A / D to move, W to jump.\nPress ENTER to start.";
   let labelY = logoY + logoH + 14;
-  textFont("Verdana");
+  textFont("Pixelify Sans");
   textStyle(BOLD);
   textSize(18);
   textLeading(24);
@@ -1093,19 +1650,20 @@ function drawLoseScreen() {
 }
 
 function keyPressed() {
-  if (gameState === STATE.START) {
+  // Dialogue intercept — must come before any other state handler
+  if (dialogueActive) {
+    advanceDialogue();
+    return;
+  }
+
+  if (gameState === STATE.SPLASH) {
     if (keyCode === ENTER) {
-      loadLevel(0);
-      gameState = STATE.PLAYING;
-    }
-    // E = enter door if player is close enough (with delay animation)
-    if (keyCode === 69) {
-      let dx = INTRO.door.x + DOOR_W / 2;
-      let dy = INTRO.door.y + DOOR_H / 2;
-      if (abs(player.x - dx) < 60 && abs(player.y - dy) < 80) {
-        introDoorOpen = true;
-        introDelayTimer = WIN_DELAY_FRAMES;
-      }
+      // Camera stays right where the splash shot left it — drawIntroScreen()
+      // eases it out to a full view of the ship first, then into the
+      // tutorial framing on the player.
+      introPhase = "zoomOut";
+      gameState = STATE.START;
+      updateSounds();
     }
   } else if (gameState === STATE.PLAYING) {
     if (keyCode === 78) {
@@ -1120,8 +1678,7 @@ function keyPressed() {
     }
   } else if (gameState === STATE.WIN) {
     if (keyCode === ENTER) {
-      initIntroPlayer();
-      gameState = STATE.START;
+      goToSplash();
     }
   } else if (gameState === STATE.LOSE) {
     if (keyCode === 82) {
@@ -1129,8 +1686,7 @@ function keyPressed() {
       gameState = STATE.PLAYING;
     }
     if (keyCode === ENTER) {
-      initIntroPlayer();
-      gameState = STATE.START;
+      goToSplash();
     }
   }
 }
