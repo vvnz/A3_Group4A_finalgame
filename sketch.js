@@ -196,6 +196,128 @@ let dialogueLinesPerPage = 6;
 let dialogueFrameCounter = 0;
 const DIALOGUE_FRAMES_PER_CHAR = 2;
 
+// ── Level tutorial barks ────────────────────────────────────────────────────
+// Short, non-blocking tips that float up during actual gameplay — unlike the
+// intro's dialogueActive system, these never touch player input, they just
+// show for a while and fade away on their own (or get replaced by the next
+// one that triggers).
+let levelBark = null; // { speaker, text } or null when nothing showing
+let levelBarkTimer = 0;
+
+function showLevelBark(speaker, text) {
+  levelBark = { speaker, text };
+  // Longer lines get more time on screen; short ones still get a fair read.
+  levelBarkTimer = max(210, round(text.length * 2.2));
+}
+
+function updateLevelBark() {
+  if (!levelBark) return;
+  levelBarkTimer--;
+  if (levelBarkTimer <= 0) levelBark = null;
+}
+
+// Level 1 specific: which one-shot tips have already fired.
+let level1BarrelBarkShown = false;
+let level1LanternBarkShown = false;
+let level1HelmBarkShown = false;
+let level1HasBeenSeasick = false; // gates the "get to the helm" bark so it can't fire at 0 seasickness before the player has ever actually gotten sick
+
+function resetLevel1Tutorial() {
+  level1BarrelBarkShown = false;
+  level1LanternBarkShown = false;
+  level1HelmBarkShown = false;
+  level1HasBeenSeasick = false;
+  levelBark = null;
+  levelBarkTimer = 0;
+}
+
+// Checks proximity/state triggers for the three Level 1 tips. Call once per
+// frame while gameState === STATE.PLAYING.
+function updateLevel1Tutorial() {
+  if (currentLevel !== 0) return;
+
+  if (player.seasickness >= 15) level1HasBeenSeasick = true;
+
+  // Barrel-jumping tip — near the starter barrel stack just past spawn.
+  if (!level1BarrelBarkShown) {
+    let nearBarrels = abs(player.x - 268) < 120 && abs(player.y - 232) < 100;
+    if (nearBarrels) {
+      showLevelBark(
+        "PARROT",
+        "Use those feet of yours and jump over those barrels!",
+      );
+      level1BarrelBarkShown = true;
+    }
+  }
+
+  // Lantern tip — near the first lantern the player reaches (closest to spawn).
+  if (!level1LanternBarkShown) {
+    let firstLantern = LANTERNS[0][1];
+    let nearLantern =
+      abs(player.x - firstLantern.x) < 100 &&
+      abs(player.y - firstLantern.y) < 120;
+    if (nearLantern) {
+      showLevelBark(
+        "PARROT",
+        "You're new to this shindig, so you're gonna keep getting more seasick. Get to the lanterns to take a break. The dark makes you feel less nauseous.",
+      );
+      level1LanternBarkShown = true;
+    }
+  }
+
+  // "Get to the helm" tip — once seasickness has fully recovered at a lantern.
+  if (
+    level1LanternBarkShown &&
+    !level1HelmBarkShown &&
+    level1HasBeenSeasick &&
+    darkMode &&
+    player.seasickness <= 0.5
+  ) {
+    showLevelBark("PARROT", "No point staying there too long though. Get to the helm!");
+    level1HelmBarkShown = true;
+  }
+}
+
+// Draws the active level bark, if any — same box art as the intro dialogue,
+// but sized to fit its (untruncated, un-paginated) text and floated a little
+// above the very bottom edge so it doesn't sit flush against the screen.
+function drawLevelBark() {
+  if (!levelBark) return;
+
+  let isChar = levelBark.speaker === "PARROT" || levelBark.speaker === "PLAYER";
+  let img = currentDialogueImage(levelBark.speaker);
+  let boxW = (CANVAS_WIDTH - 80) * 0.95;
+  let padLeft = isChar ? 220 : 75;
+  let padRight = 45;
+  let padTop = 45;
+  let padBottom = 45;
+  let maxTextW = boxW - padLeft - padRight;
+  let wrappedLines = wrapTextForDialogue(levelBark.text, maxTextW);
+  let boxH = constrain(
+    padTop + padBottom + wrappedLines.length * 40,
+    200 * 0.95,
+    320,
+  );
+  let boxX = (CANVAS_WIDTH - boxW) / 2;
+  let boxY = CANVAS_HEIGHT - boxH - 20;
+
+  push();
+  imageMode(CORNER);
+  image(img, boxX, boxY, boxW, boxH);
+  pop();
+
+  push();
+  textFont("Pixelify Sans");
+  textSize(30);
+  textLeading(40);
+  fill(60, 40, 20);
+  noStroke();
+  for (let i = 0; i < wrappedLines.length; i++) {
+    text(wrappedLines[i], boxX + padLeft, boxY + padTop + i * 40);
+  }
+  pop();
+}
+
 // ── Intro / start-screen ship scene ────────────────────────────────────────
 const INTRO = {
   // The deck platform the player stands on (tiled with platform_tile.png)
@@ -1103,6 +1225,8 @@ function draw() {
       }
     }
     updateSeasickness();
+    updateLevel1Tutorial();
+    updateLevelBark();
     resolveHorizontalCollisions();
     applyPhysics();
     clampToBounds();
@@ -1115,6 +1239,7 @@ function draw() {
     drawCharacter();
     endCameraView();
     drawHUD();
+    drawLevelBark();
   } else if (gameState === STATE.FAINTING) {
     updateCamera();
     beginCameraView();
@@ -1160,6 +1285,10 @@ function loadLevel(index) {
 
   exitDoorOpen = false;
   winDelayTimer = 0;
+
+  if (index === 0) {
+    resetLevel1Tutorial();
+  }
 
   resetCamera();
 }
