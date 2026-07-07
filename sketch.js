@@ -741,17 +741,24 @@ function startDialogue(lines) {
   }
 }
 
+// Word-wraps a dialogue line the same way it's rendered, so callers that
+// need to know the line count (paging in advanceDialogue(), centering in
+// drawDialogueBox()) can never disagree with what's actually drawn.
+function getWrappedDialogueLines(line) {
+  let isChar = line.speaker === "PARROT" || line.speaker === "PLAYER";
+  let boxW = (CANVAS_WIDTH - 80) * 0.95;
+  let padLeft = isChar ? 220 : 75;
+  let padRight = 45;
+  let maxTextW = boxW - padLeft - padRight;
+  return wrapTextForDialogue(line.text, maxTextW);
+}
+
 // Handles Enter key during dialogue: finish typing or advance to next line.
 function advanceDialogue() {
   if (!dialogueActive || dialogueIndex >= INTRO_DIALOGUE.length) return;
 
   let line = INTRO_DIALOGUE[dialogueIndex];
-  let isChar = line.speaker === "PARROT" || line.speaker === "PLAYER";
-  let padLeft = isChar ? 100 : 45;
-  let padRight = 45;
-  let boxW = (CANVAS_WIDTH - 80) * 0.95;
-  let maxTextW = boxW - padLeft - padRight;
-  let wrappedLines = wrapTextForDialogue(line.text, maxTextW);
+  let wrappedLines = getWrappedDialogueLines(line);
 
   if (dialogueCharIndex < line.text.length) {
     // Still typing — finish instantly
@@ -806,17 +813,16 @@ function drawDialogueBox() {
 
   // Text area padding — leave breathing room for centering
   let padLeft = isCharacter ? 220 : 75;
-  let padRight = 45;
   let padTop = 45;
   let padBottom = 45;
 
   // Horizontally center: draw at the midpoint of the text area
-  let maxTextW = boxW - padLeft - padRight;
   let textX = boxX + padLeft;
   let textY = boxY + padTop; // vertOffset added after wrapping below
 
-  // Wrap text into visual lines
-  let wrappedLines = wrapTextForDialogue(line.text, maxTextW);
+  // Wrap text into visual lines — same calculation advanceDialogue() uses
+  // for paging, so the two can never disagree about the line count.
+  let wrappedLines = getWrappedDialogueLines(line);
 
   // Vertically center based on how many lines fit on this page
   let textAreaH = boxH - padTop - padBottom;
