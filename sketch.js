@@ -225,37 +225,29 @@ const INTRO = {
 // ── Intro dialogue lines ────────────────────────────────────────────────────
 const INTRO_DIALOGUE = [
   { speaker: "PARROT", text: "*SQUAWK* Quiet morning… Hm…" },
-  { speaker: "PLAYER", text: "What are you on about?" },
+  { speaker: "PLAYER", text: "Good... morning... ugh... is that singing I hear?" },
   {
     speaker: "DIALOGUE",
-    text: "Harmonious singing echoes from the end of the ship, the [redacted]",
-  },
-  {
-    speaker: "DIALOGUE",
-    text: "It grows in volume, ringing through your head, but you can hardly think.",
+    text: "♪ Harmonious singing echoes from the stern of the Swift Claudia. It feels like you're being drawn in... are those sirens?",
   },
   { speaker: "DIALOGUE", text: "*THUMP THUMP*" },
   { speaker: "DIALOGUE", text: "*BIG SPLASH*" },
-  { speaker: "PLAYER", text: "Wait wuh? What was that?" },
+  { speaker: "PLAYER", text: "What was that??" },
   {
     speaker: "PARROT",
-    text: "*CAW CAW* Sirens spotted at starboard, crew gone overboard!",
+    text: "*CAW CAW* Sirens spotted at starboard — crew gone overboard!",
   },
-  { speaker: "PLAYER", text: "Wait, what? Everyone?" },
-  { speaker: "PLAYER", text: "…" },
+  { speaker: "PLAYER", text: "Wait... everyone?" },
   { speaker: "PLAYER", text: "Then who's at the helm??" },
   {
     speaker: "PARROT",
-    text: "*CAW* No one, you empty bucket! It's time to earn your sea legs!",
+    text: "No one, you empty bucket! Time to steer this beauty home before we feed the fish!",
   },
   {
     speaker: "PARROT",
-    text: "What are you waiting for? Get to the helm before we feed the fish!",
+    text: "Use A and D to move, and Space to jump.",
   },
-  {
-    speaker: "PARROT",
-    text: "Use A <- and D -> to move left and right, and space to jump.",
-  },
+  { speaker: "PARROT", text: "Time to earn your sea legs, swashbuckler!" },
   { speaker: "PLAYER", text: "Argh, but I'm gonna get so seasick!" },
 ];
 
