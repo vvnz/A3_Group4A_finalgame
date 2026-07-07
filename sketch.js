@@ -578,6 +578,7 @@ let imgPlatformTile;
 let imgDialogueGeneric;
 let imgDialogueParrot;
 let imgDialoguePirate;
+let imgSign;
 let soundBGM;
 let soundSeagulls;
 let exitDoorOpen = false;
@@ -601,6 +602,7 @@ function preload() {
   imgDialogueGeneric = loadImage("assets/images/dialogue.png");
   imgDialogueParrot = loadImage("assets/images/parrot_dialogue.png");
   imgDialoguePirate = loadImage("assets/images/pirate_dialogue.png");
+  imgSign = loadImage("assets/images/sign.png");
   soundBGM = loadSound("assets/sounds/bgm.mp3");
   soundSeagulls = loadSound("assets/sounds/seagulls.mp3");
 
@@ -863,6 +865,14 @@ function drawSplashScreen() {
   imageMode(CORNER);
   let logoH = INTRO_LOGO.w * (imgLogo.height / imgLogo.width);
   image(imgLogo, INTRO_LOGO.x, INTRO_LOGO.y, INTRO_LOGO.w, logoH);
+  pop();
+
+  // Wooden sign behind the prompt, centered on the same point as the text.
+  push();
+  imageMode(CENTER);
+  let signW = 600;
+  let signH = signW * (imgSign.height / imgSign.width);
+  image(imgSign, CANVAS_WIDTH / 2 - 200, CANVAS_HEIGHT - 300, signW, signH);
   pop();
 
   push();
