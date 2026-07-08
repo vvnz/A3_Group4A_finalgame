@@ -249,13 +249,22 @@ let level1LanternBarkShown = false;
 let level1HelmBarkShown = false;
 let level1HasBeenSeasick = false; // gates the "get to the helm" bark so it can't fire at 0 seasickness before the player has ever actually gotten sick
 
+// Clears only the currently-showing bark (used on death/retry/level load)
+// WITHOUT touching the one-shot "shown" flags, so a tip already seen this
+// playthrough won't replay after the player dies.
+function clearLevelBark() {
+  levelBark = null;
+  levelBarkPage = 0;
+}
+
+// Full tutorial reset for a fresh game (from the splash screen) — re-arms
+// every one-shot tip so they can fire again on a new playthrough.
 function resetLevel1Tutorial() {
   level1BarrelBarkShown = false;
   level1LanternBarkShown = false;
   level1HelmBarkShown = false;
   level1HasBeenSeasick = false;
-  levelBark = null;
-  levelBarkPage = 0;
+  clearLevelBark();
 }
 
 // Checks proximity/state triggers for the three Level 1 tips. Call once per
@@ -691,6 +700,8 @@ function goToSplash() {
   dialogueCharIndex = 0;
   dialoguePageOffset = 0;
   dialogueFrameCounter = 0;
+  // Re-arm the Level 1 one-shot tips for a new playthrough
+  resetLevel1Tutorial();
   screenShakeIntensity = 0;
   screenShakeTimer = 0;
 }
@@ -1352,7 +1363,7 @@ function draw() {
     drawDoors();
     updateLantern();
     updateLevel1Tutorial();
-    if (darkMode || (levelBark && levelBark.blocksMovement)) {
+    if (darkMode || levelBark) {
       player.isMoving = false;
     } else {
       handleInput();
@@ -1361,11 +1372,9 @@ function draw() {
     if (winDelayTimer > 0) {
       winDelayTimer--;
       if (winDelayTimer === 0) {
-        if (currentLevel < LEVELS.length - 1) {
-          loadLevel(currentLevel + 1);
-        } else {
-          gameState = STATE.WIN;
-        }
+        // Levels 2 and 3 aren't built yet, so reaching the Level 1 exit
+        // shows the temporary "level complete" screen instead of advancing.
+        gameState = STATE.WIN;
       }
     }
     updateSeasickness();
@@ -1428,9 +1437,9 @@ function loadLevel(index) {
   exitDoorOpen = false;
   winDelayTimer = 0;
 
-  if (index === 0) {
-    resetLevel1Tutorial();
-  }
+  // Keep the one-shot tutorial flags across deaths/retries — only clear any
+  // bark that happened to be on screen when the level (re)loaded.
+  clearLevelBark();
 
   resetCamera();
 }
@@ -1901,12 +1910,11 @@ function drawWinScreen() {
   fill(120, 230, 150);
   textAlign(CENTER, CENTER);
   textSize(56);
-  text("YOU WIN!", width / 2, height / 2 - 40);
+  text("LEVEL COMPLETE", width / 2, height / 2 - 40);
 
   fill(220);
   textSize(18);
-  text("You've earned your sealegs.", width / 2, height / 2 + 20);
-  text("Press ENTER to play again", width / 2, height / 2 + 60);
+  text("Press ENTER to restart", width / 2, height / 2 + 30);
 }
 
 function drawLoseScreen() {
@@ -1924,17 +1932,18 @@ function drawLoseScreen() {
 }
 
 function keyPressed() {
-  // Dialogue intercept — must come before any other state handler
+  // Dialogue intercept — must come before any other state handler.
+  // Only Enter advances; every other key is swallowed so nothing else fires.
   if (dialogueActive) {
-    advanceDialogue();
+    if (keyCode === ENTER) advanceDialogue();
     return;
   }
 
-  // Level barks only intercept Enter specifically — unlike the intro
-  // dialogue, other keys (movement, debug level-skip) still pass through,
-  // since barks that don't set blocksMovement shouldn't stall gameplay.
-  if (levelBark && keyCode === ENTER) {
-    advanceLevelBark();
+  // Level barks freeze the game the same way: only Enter advances/dismisses,
+  // and all other keys are swallowed so the player can't move or trigger
+  // debug shortcuts while a tip is up.
+  if (levelBark) {
+    if (keyCode === ENTER) advanceLevelBark();
     return;
   }
 
