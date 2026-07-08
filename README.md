@@ -59,28 +59,29 @@ Before our final Assignment 3 submission, we will change the colour of our platf
 
 ## Assets
 
-| File                                 | Source                                                                                                                               |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `assets/images/background_intro.png` | [Drawn by Catherina Yin] [1]                                                                                                         |
-| `assets/images/barrel.png`           | [Drawn by Catherina Yin] [2]                                                                                                         |
-| `assets/images/dialogue.png`         | [Drawn by Catherina Yin] [3]                                                                                                         |
-| `assets/images/doorclose.png`        | [Drawn by Catherina Yin] [4]                                                                                                         |
-| `assets/images/dooropen.png`         | [Drawn by Catherina Yin] [5]                                                                                                         |
-| `assets/images/hammock.png`          | [Drawn by Catherina Yin] [6]                                                                                                         |
-| `assets/images/lantern.png`          | [Drawn by Catherina Yin] [7]                                                                                                         |
-| `assets/images/lvl1background.png`   | [Drawn by Catherina Yin] [8]                                                                                                         |
-| `assets/images/parrot_dialogue.png`  | [Drawn by Catherina Yin] [9]                                                                                                         |
-| `assets/images/pirate_dialogue.png`  | [Drawn by Catherina Yin] [10]                                                                                                        |
-| `assets/images/pirate_sprite.png`    | [Drawn by Catherina Yin] [11]                                                                                                        |
-| `assets/images/platform_tile.png`    | [Drawn by Catherina Yin] [12]                                                                                                        |
-| `assets/images/rat.png`              | [Drawn by Catherina Yin] [13]                                                                                                        |
-| `assets/images/sealegs_logo.png`     | [Drawn by Catherina Yin] [14]                                                                                                        |
-| `assets/images/sign.png`             | [Drawn by Catherina Yin] [15]                                                                                                        |
-| `assets/images/spritesheet.png`      | [Drawn by Catherina Yin] [16]                                                                                                        |
-| `assets/images/title.png`            | [Drawn by Catherina Yin] [17]                                                                                                        |
-| `assets/sounds/seagulls.mp3`         | DRAGON_STUDIO. Seagull Calls - Sourced from https://pixabay.com/sound-effects/nature-seagull-calls-339723/ [18]                      |
-| `assets/sounds/bgm.mp3`              | Magiksolo. Pirate Tavern (Full Version!) - Sourced from https://pixabay.com/music/main-title-pirate-tavern-full-version-167990/ [19] |
-| `assets/sounds/splash.mp3`           | Universfield. Water Splash 02 - Sourced from https://pixabay.com/sound-effects/nature-water-splash-02-352021/ [20]                   |
+| File                                              | Source                                                                                                                               |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `assets/images/background_intro.png`              | [Drawn by Catherina Yin] [1]                                                                                                         |
+| `assets/images/barrel.png`                        | [Drawn by Catherina Yin] [2]                                                                                                         |
+| `assets/images/dialogue.png`                      | [Drawn by Catherina Yin] [3]                                                                                                         |
+| `assets/images/doorclose.png`                     | [Drawn by Catherina Yin] [4]                                                                                                         |
+| `assets/images/dooropen.png`                      | [Drawn by Catherina Yin] [5]                                                                                                         |
+| `assets/images/hammock.png`                       | [Drawn by Catherina Yin] [6]                                                                                                         |
+| `assets/images/lantern.png`                       | [Drawn by Catherina Yin] [7]                                                                                                         |
+| `assets/images/lvl1background.png`                | [Drawn by Catherina Yin] [8]                                                                                                         |
+| `assets/images/parrot_dialogue.png`               | [Drawn by Catherina Yin] [9]                                                                                                         |
+| `assets/images/pirate_dialogue.png`               | [Drawn by Catherina Yin] [10]                                                                                                        |
+| `assets/images/pirate_sprite.png`                 | [Drawn by Catherina Yin] [11]                                                                                                        |
+| `assets/images/platform_tile.png`                 | [Drawn by Catherina Yin] [12]                                                                                                        |
+| `assets/images/rat.png`                           | [Drawn by Catherina Yin] [13]                                                                                                        |
+| `assets/images/sealegs_logo.png`                  | [Drawn by Catherina Yin] [14]                                                                                                        |
+| `assets/images/sign.png`                          | [Drawn by Catherina Yin] [15]                                                                                                        |
+| `assets/images/spritesheet.png`                   | [Drawn by Catherina Yin] [16]                                                                                                        |
+| `assets/images/title.png`                         | [Drawn by Catherina Yin] [17]                                                                                                        |
+| `assets/sounds/seagulls.mp3`                      | DRAGON_STUDIO. Seagull Calls - Sourced from https://pixabay.com/sound-effects/nature-seagull-calls-339723/ [18]                      |
+| `assets/sounds/bgm.mp3`                           | Magiksolo. Pirate Tavern (Full Version!) - Sourced from https://pixabay.com/music/main-title-pirate-tavern-full-version-167990/ [19] |
+| `assets/sounds/splash.mp3`                        | Universfield. Water Splash 02 - Sourced from https://pixabay.com/sound-effects/nature-water-splash-02-352021/ [20]                   |
+| `assets/fonts/PixelifySans-VariableFont_wght.ttf` | Stefie Justprince. Pixelify Sans - Sourced from https://fonts.google.com/specimen/Pixelify+Sans [21]                                 |
 
 ## References
 
@@ -89,3 +90,5 @@ Before our final Assignment 3 submission, we will change the colour of our platf
 [19] Magiksolo. n.d. Pirate Tavern (Full Version!). Audio. Retrieved July, 6, 2026 from https://pixabay.com/music/main-title-pirate-tavern-full-version-167990/
 
 [20] Universfield. n.d. Water Splash 02. Audio. Retrieved July, 6, 2026 from https://pixabay.com/sound-effects/nature-water-splash-02-352021/
+
+[21] Justprince, Stefie. 2021. Pixelify Sans. Typeface. Retrieved July, 2, 2026 from https://fonts.google.com/specimen/Pixelify+Sans
