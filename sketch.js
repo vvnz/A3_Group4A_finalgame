@@ -424,7 +424,7 @@ const INTRO_DIALOGUE = [
   },
   {
     speaker: "DIALOGUE",
-    text: "♪ Harmonious singing echoes from the stern of the Swift Claudia.",
+    text: "♪ Harmonious singing echoes from the stern of the _Swift Claudia_.",
   },
   {
     speaker: "DIALOGUE",
@@ -657,6 +657,7 @@ function updateSounds() {
   } else if (gameState !== STATE.SPLASH) {
     // Everything non-splash / non-start gets BGM: PLAYING, FAINTING,
     // WIN, LOSE all keep the same music looping.
+    soundBGM.setVolume(0.455); // 30% quieter than default, then another 35% off
     soundBGM.loop();
   }
   // SPLASH — silence, no conflict with browser autoplay.
