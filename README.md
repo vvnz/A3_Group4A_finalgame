@@ -6,13 +6,13 @@ Sealegs is a 2D platformer that tests players in traversing through their ship w
 
 ## Design Rationale
 
-Sealegs teaches players how to interact with the world through both perceived and real affordances. The starting screen crafts a storyline and introduces the main characters and controls while first presenting the seasick concept. Before any mechanics appear, players understand the goal of the game and how to get there. Once gameplay starts, hazards communicate their purpose through familiar shapes. For example, spikes are conventionally dangerous and the barrels look like obstacles, so players naturally assume they should avoid or jump over them. These assumptions match the real consequences and builds players' trust in the game’s visual language.
+Sealegs teaches players how to interact with the world through both perceived and real affordances [22]. The starting screen crafts a storyline and introduces the main characters and controls while first presenting the seasick concept. Before any mechanics appear, players understand the goal of the game and how to get there. Once gameplay starts, hazards communicate their purpose through familiar shapes. For example, spikes are conventionally dangerous and the barrels look like obstacles, so players naturally assume they should avoid or jump over them. These assumptions match the real consequences and builds players' trust in the game’s visual language.
 
-The lantern introduces a more nuanced affordance. Players quickly learn it reduces seasickness, but the meter continues to increase once players start moving again. This forces players to be intentional with their movements and be mindful of their jump timing.
+The lantern introduces a more nuanced affordance [22]. Players quickly learn it reduces seasickness, but the meter continues to increase once players start moving again. This forces players to be intentional with their movements and be mindful of their jump timing.
 
-Level 1 follows game flow principles by introducing players with simple traversal before presenting timing‑based hazards. Instant resets keep the pace moving, and reaching the helm provides a straightforward goal that ties back to the intro’s urgency.
+Level 1 follows GameFlow principles by introducing players with simple traversal before presenting timing‑based hazards [24]. Instant resets keep the pace moving, and reaching the helm provides a straightforward goal that ties back to the intro’s urgency.
 
-We integrated the realities of vestibular disorder through the main seasickness mechanic that follows a seasickness meter that increases as players move. Once a threshold is surpassed, the player's screen begins shaking, reflecting the sense of imbalance and visual disturbance that those with vestibular disorder experience. As previously explained, this works in tandem with our lantern mechanic that counteracts these effects.
+We integrated the realities of vestibular disorder through the main seasickness mechanic that follows a seasickness meter that increases as players move [23]. Once a threshold is surpassed, the player's screen begins shaking, reflecting the sense of imbalance and visual disturbance that those with vestibular disorder experience. As previously explained, this works in tandem with our lantern mechanic that counteracts these effects.
 
 ## Setup and Interaction Instructions
 
@@ -20,8 +20,9 @@ To run the sketch locally, open `index.html` in Google Chrome using Live Server.
 
 **Controls:**
 
-- ‘W’ – move left
+- ‘A’ – move left
 - ‘D’ – move right
+- 'W' - jump
 - ‘SPACE’ – jump
 - Press and hold 'E' - turn off the lantern
 - ‘ENTER’ - advance to next dialogue screen
@@ -84,10 +85,16 @@ Before our final Assignment 3 submission, we will change the colour of our platf
 | `assets/fonts/PixelifySans-VariableFont_wght.ttf` | Stefie Justprince. Pixelify Sans - Sourced from https://fonts.google.com/specimen/Pixelify+Sans [21]                                 |
 
 ## References
+[22] Cardona-Rivera, R. E., and Young, R. M. 2013. A Cognitivist Theory of Affordances for Games. Proceedings of DiGRA 2013 Conference: DeFragging Game Studies.
+Digital Games Research Association (DiGRA), Atlanta, GA, USA.
+
+[23] Cleveland Clinic. 2024. Vestibular Disorders: Symptoms, Causes & Treatment. Cleveland Clinic. Retrieved July 9, 2026 from https://my.clevelandclinic.org/health/diseases/vestibular-disorders
 
 [18] DRAGON_STUDIO. n.d. Seagull Calls. Audio. Retrieved July, 6, 2026 from https://pixabay.com/sound-effects/nature-seagull-calls-339723/
 
 [19] Magiksolo. n.d. Pirate Tavern (Full Version!). Audio. Retrieved July, 6, 2026 from https://pixabay.com/music/main-title-pirate-tavern-full-version-167990/
+
+[24] Penelope Sweetser and Peta Wyeth. 2005. GameFlow: A model for evaluating player enjoyment in games. Computers in Entertainment 3, 3 (2005), 1–24. https://doi.org/10.1145/1077246.1077253
 
 [20] Universfield. n.d. Water Splash 02. Audio. Retrieved July, 6, 2026 from https://pixabay.com/sound-effects/nature-water-splash-02-352021/
 
