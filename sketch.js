@@ -2,7 +2,6 @@
 // A3 Final Game — Group 4A
 // ============================================================
 // [DETAILS]
-// ============================================================
 
 // Set to false once hitbox positions look right
 const DEBUG_HITBOXES = false;
