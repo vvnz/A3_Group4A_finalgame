@@ -635,7 +635,7 @@ function preload() {
   imgDoorClosed = loadImage("assets/images/doorclose.png");
   imgDoorOpen = loadImage("assets/images/dooropen.png");
   imgHammock = loadImage("assets/images/hammock.png");
-  imgLantern = loadImage("assets/images/lantern.png");
+  imgLantern = loadImage("assets/images/hanging_lantern.png");
   imgPlatformTile = loadImage("assets/images/platform_tile.png");
   imgDialogueGeneric = loadImage("assets/images/dialogue.png");
   imgDialogueParrot = loadImage("assets/images/parrot_dialogue.png");
