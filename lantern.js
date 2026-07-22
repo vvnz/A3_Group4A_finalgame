@@ -15,7 +15,11 @@ const LANTERNS = {
     { x: 915, y: 320, w: 40, h: 64 },
     { x: 55, y: 498 - 60, w: 40, h: 64 },
   ],
-  1: [], // Level 2
+  1: [
+    // Level 2 — wall lanterns above the top-left platform and the right ledge.
+    { x: 250, y: 284, w: 40, h: 64 }, // over the top-left platform (y336)
+    { x: 864, y: 388, w: 40, h: 64 }, // over the right platform (y440)
+  ],
   2: [], // Level 3
 };
 

@@ -551,23 +551,46 @@ const LEVELS = [
     // Reuse the Level 1 background for now — real Level 2 art comes later.
     background: "assets/images/lvl1background.png",
     backgroundColor: [150, 75, 0],
-    start: { x: 40, y: 200 },
+    // Spawn on the floor of the LEFT region, beside the spawn door.
+    start: { x: 56, y: 560 },
     platforms: [
-      // PLACEHOLDER geometry — a floor, a left block, and a landing ledge
-      // near the exit. To be replaced once the real Level 2 layout is
-      // designed. Player physics/collision are identical to Level 1 since
-      // everything reads from LEVELS[currentLevel].
-      { x: 0, y: 304, tilesW: 10, tilesH: 1 }, // starter ledge by the spawn door
-      { x: 0, y: 544, tilesW: 6, tilesH: 50 }, // big block on the left
-      { x: 760, y: 400, tilesW: 12, tilesH: 1 }, // landing ledge near exit
+      // Layout follows the Level 2 design sketch. A central wall splits the
+      // arena into a LEFT region (spawn) and a RIGHT region (exit + rat);
+      // the only way across is over the top, gated by the phantom platforms
+      // in phantom.js (PHANTOMS[1]). Regular platforms are listed here.
+
+      // ── World frame ──
       { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 }, // ground floor
+      { x: 0, y: 56, tilesW: 60, tilesH: 1 }, // top ceiling band
+      { x: 600, y: 112, tilesW: 22, tilesH: 1 }, // top-right ledge
+
+      // ── Central dividing wall (blocks the floor; cross over the top) ──
+      { x: 456, y: 288, tilesW: 2, tilesH: 21 }, // wall down to the floor
+      { x: 488, y: 304, tilesW: 22, tilesH: 1 }, // right ledge (spikes on top)
+      { x: 848, y: 304, tilesW: 7, tilesH: 1 }, // safe landing past the spikes
+
+      // ── LEFT region: staircase up to the top-left lantern & crossing ──
+      { x: 80, y: 552, tilesW: 6, tilesH: 1 },
+      { x: 210, y: 480, tilesW: 6, tilesH: 1 },
+      { x: 70, y: 408, tilesW: 8, tilesH: 1 },
+      { x: 200, y: 336, tilesW: 9, tilesH: 1 }, // under the top-left lantern
+      { x: 300, y: 496, tilesW: 8, tilesH: 1 }, // lower ledge near the wall
+
+      // ── RIGHT region: crossing landing, descent to the exit ──
+      { x: 500, y: 236, tilesW: 9, tilesH: 1 }, // right-center upper (crossing)
+      { x: 800, y: 440, tilesW: 8, tilesH: 1 }, // under the right lantern
+      { x: 520, y: 520, tilesW: 7, tilesH: 1 }, // center-right low
     ],
-    // Phantom platforms for this level are defined in phantom.js (PHANTOMS[1]).
-    spikes: [],
-    // Rat patrols the ground floor, same behaviour as Level 1.
-    rat: { minX: 300, maxX: 560 },
-    spawnDoor: { x: 13, y: 227 },
-    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
+    // Phantom platforms for this level are defined in phantom.js (PHANTOMS[1]);
+    // the one over the spike pit moves back and forth (moveMinX/moveMaxX).
+    spikes: [
+      { x: 456, y: 288, tilesW: 2 }, // spike atop the dividing wall
+      { x: 488, y: 304, tilesW: 22 }, // spike field on the right ledge
+    ],
+    // Rat patrols the RIGHT region floor, between the wall and the exit door.
+    rat: { minX: 520, maxX: 812 },
+    spawnDoor: { x: 20, y: CANVAS_HEIGHT - 16 - DOOR_H }, // bottom-left, on floor
+    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - 16 - DOOR_H }, // bottom-right
   },
   {
     name: "Level 3 — Mastery",
