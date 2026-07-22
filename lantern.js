@@ -2,12 +2,18 @@
 // Lantern Darkness Mechanic
 // ============================================================
 
-// Lanterns by level (x, y, w, h)
+// Lanterns by level (x, y = CENTER of the sprite; w, h = draw size).
+// These are wall-mounted HANGING lanterns (hanging_lantern.png), so they sit
+// raised off the ground rather than resting on it — same x as before, but the
+// y is lifted ~40px so it reads as hanging. It stays well within the E-to-use
+// reach zone (updateLantern() checks |player.y - lantern.y| < 80), so a player
+// standing on the ledge/barrel below can still light it. w/h match the new
+// image's ~0.63 aspect ratio so it isn't stretched.
 const LANTERNS = {
   0: [
     // Level 1
-    { x: 915, y: 360, w: 20, h: 45 },
-    { x: 55, y: 498 - 20, w: 20, h: 45 },
+    { x: 915, y: 320, w: 40, h: 64 },
+    { x: 55, y: 498 - 60, w: 40, h: 64 },
   ],
   1: [], // Level 2
   2: [], // Level 3

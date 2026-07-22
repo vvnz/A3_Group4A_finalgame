@@ -150,6 +150,10 @@ const SPIKE_H = 16;
 const RAT_SPEED = 2.4; // patrol speed in pixels per frame — adjust to taste
 const RAT_SIZE = 32; // display size on canvas
 
+// Phantom platforms (the flicker-in/out platforms) live in phantom.js —
+// their per-level data and the drawPhantoms()/getActivePlatforms() helpers
+// used by the collision routines are all defined there.
+
 const SEASICK_MAX = 100;
 const SEASICK_RATE = 0.23; // gain per frame while moving
 const SEASICK_DECAY = 0.005; // loss per frame while still
@@ -500,7 +504,7 @@ let logoAlpha = 255;
 
 const LEVELS = [
   {
-    name: "LEVEL 1 — LEARNING THE ROPES",
+    name: "Level 1",
     background: "assets/images/lvl1background.png",
     backgroundColor: [150, 75, 0],
     start: { x: 40, y: 200 },
@@ -543,11 +547,27 @@ const LEVELS = [
     exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
   },
   {
-    name: "Level 2 — Pressure",
-    background: null,
-    backgroundColor: [40, 55, 80],
-    start: { x: 100, y: 320 },
-    platforms: [],
+    name: "Level 2",
+    // Reuse the Level 1 background for now — real Level 2 art comes later.
+    background: "assets/images/lvl1background.png",
+    backgroundColor: [150, 75, 0],
+    start: { x: 40, y: 200 },
+    platforms: [
+      // PLACEHOLDER geometry — a floor, a left block, and a landing ledge
+      // near the exit. To be replaced once the real Level 2 layout is
+      // designed. Player physics/collision are identical to Level 1 since
+      // everything reads from LEVELS[currentLevel].
+      { x: 0, y: 304, tilesW: 10, tilesH: 1 }, // starter ledge by the spawn door
+      { x: 0, y: 544, tilesW: 6, tilesH: 50 }, // big block on the left
+      { x: 760, y: 400, tilesW: 12, tilesH: 1 }, // landing ledge near exit
+      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 }, // ground floor
+    ],
+    // Phantom platforms for this level are defined in phantom.js (PHANTOMS[1]).
+    spikes: [],
+    // Rat patrols the ground floor, same behaviour as Level 1.
+    rat: { minX: 300, maxX: 560 },
+    spawnDoor: { x: 13, y: 227 },
+    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
   },
   {
     name: "Level 3 — Mastery",
@@ -615,7 +635,7 @@ function preload() {
   imgDoorClosed = loadImage("assets/images/doorclose.png");
   imgDoorOpen = loadImage("assets/images/dooropen.png");
   imgHammock = loadImage("assets/images/hammock.png");
-  imgLantern = loadImage("assets/images/lantern.png");
+  imgLantern = loadImage("assets/images/hanging_lantern.png");
   imgPlatformTile = loadImage("assets/images/platform_tile.png");
   imgDialogueGeneric = loadImage("assets/images/dialogue.png");
   imgDialogueParrot = loadImage("assets/images/parrot_dialogue.png");
@@ -705,6 +725,24 @@ function goToSplash() {
   resetLevel1Tutorial();
   screenShakeIntensity = 0;
   screenShakeTimer = 0;
+}
+
+// Jumps straight into the interactive ship-deck tutorial with the intro
+// dialogue and camera pan already finished, so the player can move around
+// immediately. Player state was set up by initIntroPlayer() on the splash
+// screen, so we only need to clear the dialogue/pan gating and snap the
+// camera/framing to the tutorial composition.
+function skipIntroToFreeRoam() {
+  dialogueActive = false;
+  dialogueCompleted = true;
+  introPhase = null;
+  introView.anchorX = INTRO_CAMERA_ANCHOR.x;
+  introView.anchorY = INTRO_CAMERA_ANCHOR.y;
+  introView.zoom = INTRO_TUTORIAL_ZOOM;
+  logoAlpha = 0;
+  gameState = STATE.START;
+  resetCamera();
+  updateSounds();
 }
 
 function getIntroColliders() {
@@ -1359,6 +1397,7 @@ function draw() {
     beginCameraView();
     drawLevel();
     drawPlatforms();
+    drawPhantoms();
     drawSpikes();
     drawLantern();
     drawDoors();
@@ -1373,9 +1412,16 @@ function draw() {
     if (winDelayTimer > 0) {
       winDelayTimer--;
       if (winDelayTimer === 0) {
-        // Levels 2 and 3 aren't built yet, so reaching the Level 1 exit
-        // shows the temporary "level complete" screen instead of advancing.
-        gameState = STATE.WIN;
+        // Advance to the next level if it's actually been built (has its own
+        // platforms); otherwise show the "level complete" screen. This lets
+        // Level 1's exit lead into Level 2 while later unbuilt placeholder
+        // levels still fall back to the win screen.
+        let next = LEVELS[currentLevel + 1];
+        if (next && next.platforms && next.platforms.length > 0) {
+          loadLevel(currentLevel + 1);
+        } else {
+          gameState = STATE.WIN;
+        }
       }
     }
     updateSeasickness();
@@ -1397,6 +1443,7 @@ function draw() {
     beginCameraView();
     drawLevel();
     drawPlatforms();
+    drawPhantoms();
     drawSpikes();
     drawDoors();
     drawRat();
@@ -1595,7 +1642,7 @@ function updateFainting() {
 
 function resolveHorizontalCollisions() {
   const TILE_SIZE = 16;
-  let platforms = LEVELS[currentLevel].platforms || [];
+  let platforms = getActivePlatforms();
   for (let i = 0; i < platforms.length; i++) {
     let p = platforms[i];
     let w = p.tilesW * TILE_SIZE;
@@ -1631,7 +1678,7 @@ function applyPhysics() {
   player.y += player.vy;
   player.onGround = false;
 
-  let platforms = LEVELS[currentLevel].platforms || [];
+  let platforms = getActivePlatforms();
   for (let i = 0; i < platforms.length; i++) {
     let p = platforms[i];
     let w = p.tilesW * TILE_SIZE;
@@ -1933,6 +1980,16 @@ function drawLoseScreen() {
 }
 
 function keyPressed() {
+  // Checked before everything else (including the dialogue intercept) so it
+  // fires even while dialogue is up. Only active during the intro states.
+  if (
+    keyCode === 89 &&
+    (gameState === STATE.SPLASH || gameState === STATE.START)
+  ) {
+    skipIntroToFreeRoam();
+    return;
+  }
+
   // Dialogue intercept — must come before any other state handler.
   // Only Enter advances; every other key is swallowed so nothing else fires.
   if (dialogueActive) {
