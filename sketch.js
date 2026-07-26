@@ -513,11 +513,10 @@ const LEVELS = [
 
       { x: 320, y: 432, tilesW: 7, tilesH: 1 }, //floating staircase 2
       { x: 464, y: 496, tilesW: 6, tilesH: 1 }, //floating staircase 1
-      { x: 848, y: 400, tilesW: 1, tilesH: 9 }, //vertical wall 3
+      { x: 848, y: 400, tilesW: 1, tilesH: 3 }, //vertical wall 3
       { x: 848, y: 384, tilesW: 7, tilesH: 1 }, //top of vertical wall 3
       { x: 0, y: 544, tilesW: 17, tilesH: 50 }, // big block on the left
-      { x: 576, y: 528, tilesW: 18, tilesH: 1 }, //floating staircase 1
-      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 },
+      { x: 784, y: 448, tilesW: 5, tilesH: 1 }, //floating staircase 1
       {
         x: 480,
         y: CANVAS_HEIGHT - 16 - 48,
