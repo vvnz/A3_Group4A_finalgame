@@ -512,12 +512,19 @@ const LEVELS = [
       { x: 0, y: 304, tilesW: 49, tilesH: 1 },
 
       { x: 320, y: 432, tilesW: 7, tilesH: 1 }, //floating staircase 2
-      { x: 464, y: 496, tilesW: 6, tilesH: 1 }, //floating staircase 1
-      { x: 848, y: 400, tilesW: 1, tilesH: 9 }, //vertical wall 3
+      { x: 464, y: 496, tilesW: 6, tilesH: 1 }, //floating staircase 1a
+      { x: 648, y: 472, tilesW: 5, tilesH: 1 }, //NEW bridge platform — splits the big gap into two short jumps
+      { x: 784, y: 448, tilesW: 5, tilesH: 1 }, //floating staircase 1b — flush against the wall
+      { x: 848, y: 400, tilesW: 1, tilesH: 5 }, //vertical wall 3
       { x: 848, y: 384, tilesW: 7, tilesH: 1 }, //top of vertical wall 3
       { x: 0, y: 544, tilesW: 17, tilesH: 50 }, // big block on the left
-      { x: 576, y: 528, tilesW: 18, tilesH: 1 }, //floating staircase 1
-      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 },
+
+      // ── ground floor, now split into 3 segments around two hazards ──
+      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 40, tilesH: 1 }, // floor A: spawn up to the first pit
+      { x: 640, y: CANVAS_HEIGHT + 40, tilesW: 5, tilesH: 1 }, // safe pit floor — fall in, jump back out
+      { x: 720, y: CANVAS_HEIGHT - 16, tilesW: 7, tilesH: 1 }, // floor B: between the pit and the spikes
+      { x: 832, y: CANVAS_HEIGHT - 16, tilesW: 8, tilesH: 1 }, // floor C: up to the exit door
+
       {
         x: 480,
         y: CANVAS_HEIGHT - 16 - 48,
@@ -538,7 +545,9 @@ const LEVELS = [
       { x: 368, y: 256, tilesW: 3, tilesH: 3, barrel: true }, //starter barrels: bottom-right
       { x: 344, y: 208, tilesW: 3, tilesH: 3, barrel: true }, //starter barrels: top (stacked, player jumps this)
     ],
-    spikes: [],
+    spikes: [
+      { x: 760, y: CANVAS_HEIGHT - 16, tilesW: 4 }, // sits on floor B — the deadly one
+    ],
     rat: { minX: 300, maxX: 455 },
     spawnDoor: { x: 13, y: 227 },
     exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
