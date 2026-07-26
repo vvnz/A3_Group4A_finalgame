@@ -509,7 +509,7 @@ const LEVELS = [
     backgroundColor: [150, 75, 0],
     start: { x: 40, y: 200 },
     platforms: [
-      { x: 0, y: 304, tilesW: 45, tilesH: 1 },
+      { x: 0, y: 304, tilesW: 49, tilesH: 1 },
 
       { x: 320, y: 432, tilesW: 7, tilesH: 1 }, //floating staircase 2
       { x: 464, y: 496, tilesW: 6, tilesH: 1 }, //floating staircase 1
