@@ -20,25 +20,14 @@
 const PHANTOMS = {
   0: [], // Level 1
   1: [
-    // Level 2 — see the level layout in sketch.js (LEVELS[1]).
-    // E: top-center gate — the way across the top of the dividing wall.
-    { x: 336, y: 264, tilesW: 7, tilesH: 1, phase: 0 },
-    // F: moving ferry over the right-side spike pit. Fast enough to cross
-    // within a single visible window if boarded as it appears on the left.
-    {
-      x: 690,
-      y: 230,
-      tilesW: 7,
-      tilesH: 1,
-      phase: 0.34,
-      moveMinX: 690,
-      moveMaxX: 840,
-      moveSpeed: 2,
-    },
-    // K: low-left bonus ledge.
-    { x: 24, y: 456, tilesW: 9, tilesH: 1, phase: 0.67 },
-    // N: center-lower ledge in the right region.
-    { x: 648, y: 466, tilesW: 7, tilesH: 1, phase: 0.5 },
+    // Level 2 — the three blue-circled spots in the design sketch. All y
+    // values are multiples of 16 so each tiles to a single 16px-tall block.
+    // Top-center: the gate across the top of the dividing wall.
+    { x: 336, y: 224, tilesW: 7, tilesH: 1, phase: 0 },
+    // Left-mid: bonus ledge in the left region.
+    { x: 48, y: 464, tilesW: 8, tilesH: 1, phase: 0.34 },
+    // Right-low: bonus ledge in the right region.
+    { x: 648, y: 464, tilesW: 7, tilesH: 1, phase: 0.67 },
   ],
   2: [
     // Level 3 — see the level layout in sketch.js (LEVELS[2]).
@@ -88,29 +77,40 @@ function phantomAlpha(ph) {
   return 255;
 }
 
-// Current x of a phantom this frame. Static phantoms return their fixed x;
-// moving ones ping-pong horizontally between moveMinX and moveMaxX at
-// moveSpeed px/frame (default 1).
-function phantomX(ph) {
-  if (ph.moveMinX === undefined || ph.moveMaxX === undefined) return ph.x;
-  let span = ph.moveMaxX - ph.moveMinX;
-  if (span <= 0) return ph.moveMinX;
-  let speed = ph.moveSpeed || 1;
-  let t = (frameCount * speed) % (span * 2);
-  let off = t <= span ? t : span * 2 - t; // triangle wave 0..span..0
-  return ph.moveMinX + off;
+// Live x this frame for any platform that ping-pongs horizontally
+// (moveMinX/moveMaxX/moveSpeed). Static platforms (no move fields) return their
+// fixed x. Shared by phantom AND regular moving platforms. Pass a specific
+// `frame` to sample another moment (used to derive the per-frame drift below).
+function movingX(p, frame = frameCount) {
+  if (p.moveMinX === undefined || p.moveMaxX === undefined) return p.x;
+  let span = p.moveMaxX - p.moveMinX;
+  if (span <= 0) return p.moveMinX;
+  let speed = p.moveSpeed || 1;
+  let period = span * 2;
+  let t = (((frame * speed) % period) + period) % period; // 0..period
+  let off = t <= span ? t : period - t; // triangle wave 0..span..0
+  return p.moveMinX + off;
+}
+
+// How far a moving platform shifted horizontally since last frame — used by
+// applyPhysics() to carry a standing player along with it.
+function platformDX(p) {
+  if (p.moveMinX === undefined) return 0;
+  return movingX(p, frameCount) - movingX(p, frameCount - 1);
 }
 
 // Regular platforms plus any phantoms currently visible — used by every
-// collision routine so phantoms are solid exactly while they're on screen.
-// Visible phantoms are returned as copies with their live (possibly moving)
-// x, so collision always uses the platform's current position.
+// collision routine. Both regular movers and visible phantoms are returned as
+// copies with their live x, so collision always uses the current position.
 function getActivePlatforms() {
-  let platforms = LEVELS[currentLevel].platforms || [];
+  let raw = LEVELS[currentLevel].platforms || [];
+  let platforms = raw.map((p) =>
+    p.moveMinX !== undefined ? { ...p, x: movingX(p) } : p,
+  );
   let phantoms = PHANTOMS[currentLevel] || [];
   let visible = phantoms
     .filter(isPhantomVisible)
-    .map((ph) => ({ ...ph, x: phantomX(ph) }));
+    .map((ph) => ({ ...ph, x: movingX(ph) }));
   return platforms.concat(visible);
 }
 
@@ -126,7 +126,7 @@ function drawPhantoms() {
     let a = phantomAlpha(ph);
     if (a <= 0) continue;
     tint(255, a);
-    let px = phantomX(ph); // live x (moving phantoms slide horizontally)
+    let px = movingX(ph); // live x (moving phantoms slide horizontally)
     let w = ph.tilesW * TILE_SIZE;
     let h = ph.tilesH * TILE_SIZE;
     let startX = Math.floor(px / TILE_SIZE) * TILE_SIZE;
