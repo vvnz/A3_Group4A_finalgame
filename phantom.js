@@ -41,9 +41,10 @@ const PHANTOMS = {
     { x: 624, y: 224, tilesW: 6, tilesH: 1, phase: 0.66 },
     // Right-side stretch continuing off the safe landing toward the far edge.
     { x: 832, y: 272, tilesW: 8, tilesH: 1, phase: 0.15 },
-    // Lower-mid phantom — fills the gap to the left of the lower ledge
-    // (green platform at x:368..528, y:496).
-    { x: 224, y: 496, tilesW: 9, tilesH: 1, phase: 0.4 },
+    // Lower-mid phantom — aligned with the y:448 floor, its length fits
+    // exactly between the zigzag stair-wall (spawn ledge ends at x:208) and
+    // the elevated ledge (starts at x:368).
+    { x: 208, y: 448, tilesW: 10, tilesH: 1, phase: 0.4 },
   ], // Level 3
 };
 
