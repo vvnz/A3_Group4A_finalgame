@@ -567,7 +567,7 @@ const LEVELS = [
       // ── Central dividing wall (blocks the floor; cross over the top) ──
       { x: 448, y: 272, tilesW: 2, tilesH: 22 }, // wall down to the floor
       { x: 480, y: 304, tilesW: 21, tilesH: 1 }, // right ledge (spikes on top)
-      { x: 816, y: 304, tilesW: 9, tilesH: 1 }, // safe landing past the spikes
+      { x: 816, y: 304, tilesW: 5, tilesH: 1 }, // safe landing (816-896); ends just past the lantern so the player drops through the cutaway after it
 
       // ── LEFT region: staircase up to the top-left lantern & crossing ──
       // NOTE: the second step (x:224,y:464) is a PHANTOM (PHANTOMS[1]) — the
@@ -590,10 +590,11 @@ const LEVELS = [
         moveMaxX: 820,
         moveSpeed: 1.2,
       },
-      // (No platform under the far-right ledge — it blocked the descent to
-      // the exit. After the crossing, drop from the safe ledge to the floor.)
-      { x: 504, y: 464, tilesW: 7, tilesH: 1 }, // right ledge near the wall
-      { x: 640, y: 544, tilesW: 7, tilesH: 1 }, // center-right low
+      // Ending staircase: drop through the cutaway after the lantern onto the
+      // upper step, then down-left across the phantom (PHANTOMS[1]) to the
+      // lower step, then to the floor and the exit.
+      { x: 816, y: 384, tilesW: 7, tilesH: 1 }, // upper step (under the cutaway)
+      { x: 512, y: 544, tilesW: 7, tilesH: 1 }, // lower step
     ],
     // Three phantom platforms (top-center gate, left-climb step, right-low)
     // are in phantom.js (PHANTOMS[1]).
