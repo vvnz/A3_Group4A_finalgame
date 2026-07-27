@@ -21,12 +21,15 @@ const CANNONS = {
   0: [],
   1: [],
   2: [
+    // For this pass the cannon is a static BLACK SQUARE placeholder at the
+    // right end of the tunnel floor (LEVELS[2], top 448) — mechanics are
+    // intentionally not wired up. `placeholder: true` skips all firing.
     {
-      x: 910,
-      y: 490, // level with a standing player on the tunnel floor (y:528)
-      direction: -1,
-      fireIntervalFrames: 180, // ~3s at 60fps — a slow, steady rhythm
-      ballSpeed: 4,
+      x: 904,
+      y: 424, // sits on the tunnel floor (top 448); square is 48px tall
+      w: 48,
+      h: 48,
+      placeholder: true,
     },
   ],
 };
@@ -46,8 +49,13 @@ const EXTRA_RATS = {
   0: [],
   1: [],
   2: [
-    { minX: 440, maxX: 600, y: 336 }, // Rat 1 — final staircase landing (352 - RAT_SIZE/2)
-    { minX: 750, maxX: 860, y: CANVAS_HEIGHT - 16 - RAT_SIZE / 2 }, // Rat 2 — near the exit
+    // Mouse 1 — patrols the upper-left ledge (LEVELS[2] platform 32..208,
+    // top 320); the double-arrow on the sketch is its patrol span.
+    { minX: 64, maxX: 176, y: 320 - RAT_SIZE / 2 },
+    // Mouse 2 — patrols the ground floor between the spikes and the exit
+    // door; a bit more roam to the left now that the rightmost spike is gone
+    // (nearest spike ends at x:512, so it stays well clear).
+    { minX: 700, maxX: 860, y: CANVAS_HEIGHT - 16 - RAT_SIZE / 2 },
   ],
 };
 
@@ -83,6 +91,7 @@ function updateExtraRats() {
 
 function updateCannons() {
   for (let c of CANNONS[currentLevel] || []) {
+    if (c.placeholder) continue; // static black square — no firing
     c.timer = (c.timer || 0) + 1;
     if (c.timer >= c.fireIntervalFrames) {
       c.timer = 0;
@@ -160,6 +169,13 @@ function drawCannons() {
   push();
   rectMode(CENTER);
   for (let c of CANNONS[currentLevel] || []) {
+    if (c.placeholder) {
+      // Plain black square placeholder — mechanics ignored for this pass.
+      noStroke();
+      fill(0);
+      rect(c.x, c.y, c.w || 44, c.h || 44);
+      continue;
+    }
     stroke(20);
     strokeWeight(2);
     fill(60);
