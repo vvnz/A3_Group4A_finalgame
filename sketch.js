@@ -635,7 +635,7 @@ const LEVELS = [
       { x: 32, y: 320, tilesW: 11, tilesH: 1 }, // 32..208
 
       // ── LEFT: spawn ledge — the spawn door and the player start sit here. ──
-      { x: 0, y: 448, tilesW: 13, tilesH: 1 }, // 0..208
+      { x: 0, y: 448, tilesW: 14, tilesH: 1 }, // 0..224, reaches under the pillar to fill the corner
 
       // ── LEFT: the lamp's step (right half kept) plus two vertical pillars
       // that connect it, edge-to-edge, down to the spawn ledge and up to the
@@ -668,9 +668,9 @@ const LEVELS = [
     ],
     spikes: [
       { x: 288, y: 272, tilesW: 26 }, // the long top-mid crossing
-      { x: 336, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // three small clusters on the
-      { x: 496, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // ground floor, nudged left to
-      { x: 656, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // give the exit-side mouse room
+      { x: 336, y: CANVAS_HEIGHT - 16, tilesW: 4 }, // three small clusters on the
+      { x: 496, y: CANVAS_HEIGHT - 16, tilesW: 4 }, // ground floor, shortened so the
+      { x: 656, y: CANVAS_HEIGHT - 16, tilesW: 4 }, // player can clear each in a jump
     ],
     // Level 3 has its own cannon placeholder and two patrolling mice — see
     // level3extras.js (CANNONS[2] / EXTRA_RATS[2]). The single-rat system

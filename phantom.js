@@ -36,9 +36,12 @@ const PHANTOMS = {
     // Bridge blinking in ABOVE the long spike crossing (spikes at y:272,
     // x:288..704) — three staggered segments; miss the timing and you fall
     // onto the spikes below.
-    { x: 304, y: 224, tilesW: 6, tilesH: 1, phase: 0 },
-    { x: 448, y: 224, tilesW: 8, tilesH: 1, phase: 0.33 },
-    { x: 624, y: 224, tilesW: 6, tilesH: 1, phase: 0.66 },
+    // Phases stagger appearance left-to-right (1 -> 2 -> 3) so the player can
+    // hop across them in order. (Higher phase = appears earlier, so 2 and 3
+    // carry the larger phases.)
+    { x: 304, y: 224, tilesW: 6, tilesH: 1, phase: 0 }, // 1 - appears first
+    { x: 448, y: 224, tilesW: 8, tilesH: 1, phase: 0.66 }, // 2 - second
+    { x: 624, y: 224, tilesW: 6, tilesH: 1, phase: 0.33 }, // 3 - last
     // Right-side stretch continuing off the safe landing toward the far edge.
     { x: 832, y: 272, tilesW: 8, tilesH: 1, phase: 0.15 },
     // Lower-mid phantom — aligned with the y:448 floor, its length fits
