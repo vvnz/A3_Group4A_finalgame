@@ -2055,7 +2055,7 @@ function keyPressed() {
   if (keyCode === ENTER) {
     // Intro dialogue active? Advance it.
     if (dialogueActive && !dialogueCompleted) {
-      advanceDialogue(); // <-- THIS is the missing call
+      advanceDialogue(); //
       return;
     }
 
