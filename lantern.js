@@ -15,8 +15,17 @@ const LANTERNS = {
     { x: 915, y: 320, w: 40, h: 64 },
     { x: 55, y: 498 - 60, w: 40, h: 64 },
   ],
-  1: [], // Level 2
-  2: [], // Level 3
+  1: [
+    // Level 2 — wall lanterns above the top-left platform and the right ledge.
+    { x: 250, y: 284, w: 40, h: 64 }, // over the top-left platform (y336)
+    { x: 864, y: 388, w: 40, h: 64 }, // over the right platform (y440)
+  ],
+  2: [
+    // Level 3 — one partway up the staircase, one closer to the top (see
+    // LEVELS[2] in sketch.js).
+    { x: 240, y: 460, w: 40, h: 64 },
+    { x: 360, y: 390, w: 40, h: 64 },
+  ], // Level 3
 };
 
 // Whether the screen is currently dark
