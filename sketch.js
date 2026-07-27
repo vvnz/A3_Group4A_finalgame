@@ -2052,6 +2052,20 @@ function drawLoseScreen() {
 function keyPressed() {
   // Checked before everything else (including the dialogue intercept) so it
   // fires even while dialogue is up. Only active during the intro states.
+  if (keyCode === ENTER) {
+    // Intro dialogue active? Advance it.
+    if (dialogueActive && !dialogueCompleted) {
+      advanceDialogue(); // <-- THIS is the missing call
+      return;
+    }
+
+    // Level bark active? Advance it.
+    if (levelBark) {
+      advanceLevelBark();
+      return;
+    }
+  }
+
   if (
     keyCode === 89 &&
     (gameState === STATE.SPLASH || gameState === STATE.START)
