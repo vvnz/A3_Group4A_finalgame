@@ -637,15 +637,12 @@ const LEVELS = [
       // ── LEFT: spawn ledge — the spawn door and the player start sit here. ──
       { x: 0, y: 448, tilesW: 13, tilesH: 1 }, // 0..208
 
-      // ── LEFT: staircase climbing up-right from the spawn ledge to the
-      // spike crossing (each step +24px right, -24px up). The player hops up
-      // it; the upper lantern rests on the second stair from the top. ──
-      { x: 160, y: 424, tilesW: 3, tilesH: 1 },
-      { x: 184, y: 400, tilesW: 3, tilesH: 1 },
-      { x: 208, y: 376, tilesW: 3, tilesH: 1 },
-      { x: 232, y: 352, tilesW: 3, tilesH: 1 },
-      { x: 256, y: 328, tilesW: 3, tilesH: 1 }, // upper lantern rests here
-      { x: 280, y: 304, tilesW: 3, tilesH: 1 }, // top stair, meets the crossing
+      // ── LEFT: a single wide step between the spawn ledge and the mouse
+      // ledge. The player hops up onto it, is funnelled up onto the mouse
+      // ledge (y:320), then jumps off toward the spike crossing. Kept to one
+      // step so there's walking room and the head-clearance to jump. The
+      // upper lantern rests on this step. ──
+      { x: 160, y: 384, tilesW: 7, tilesH: 1 }, // 160..272
 
       // ── MID: elevated ledge, aligned with the rest of the y:448 floor.
       // Spans to x:576 so it meets the cannon tunnel with no gap. The lower
