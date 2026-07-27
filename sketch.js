@@ -418,10 +418,7 @@ const LEVELS = [
     platforms: [
       { x: 0, y: 304, tilesW: 49, tilesH: 1 },
 
-      { x: 784, y: 448, tilesW: 5, tilesH: 1 }, //horizontal one attached to the vertical
-      { x: 272, y: 432, tilesW: 7, tilesH: 1 }, //furthest left floating platform updated
-      { x: 432, y: 480, tilesW: 7, tilesH: 1 }, //middle platform updated
-      { x: 608, y: 432, tilesW: 7, tilesH: 1 }, //first platform on the right
+      { x: 288, y: 464, tilesW: 36, tilesH: 1 }, //second layer platform
 
       { x: 848, y: 400, tilesW: 1, tilesH: 4 }, //vertical wall 3
       { x: 848, y: 384, tilesW: 9, tilesH: 1 }, //top of vertical wall 3
@@ -430,14 +427,14 @@ const LEVELS = [
 
       // ground floor split into 3 segments
       { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 40, tilesH: 1 }, // floor A
-      { x: 640, y: CANVAS_HEIGHT + 40, tilesW: 5, tilesH: 1 }, // safe pit floor
+      { x: 640, y: CANVAS_HEIGHT - 16, tilesW: 5, tilesH: 1 }, // filled gap
       { x: 720, y: CANVAS_HEIGHT - 16, tilesW: 7, tilesH: 1 }, // floor B
       { x: 832, y: CANVAS_HEIGHT - 16, tilesW: 8, tilesH: 1 }, // floor C
 
       // barrels
       {
-        x: 480,
-        y: CANVAS_HEIGHT - 16 - 48,
+        x: 432,
+        y: 464 - 48, // 3 tiles tall now, so shift up to keep it grounded on y:464
         tilesW: 3,
         tilesH: 3,
         barrel: true,
@@ -458,13 +455,19 @@ const LEVELS = [
     ],
 
     // spikes now guard gap 2, flush with ground level
-    spikes: [{ x: 432, y: 304, tilesW: 4 }],
+
+    spikes: [
+      { x: 368, y: 464, tilesW: 1 },
+      { x: 528, y: 464, tilesW: 1 },
+      { x: 544, y: 464, tilesW: 1 }, // new spike, right next to the middle one
+      { x: 688, y: 464, tilesW: 1 },
+    ],
 
     rat: {
       x: 280, // starts just right of the big ground block
       y: CANVAS_HEIGHT - 32, // stands on the floor
       speed: 1.2, // smooth walk
-      minX: 280, // left boundary (big block)
+      minX: 280 + 16,
       maxX: CANVAS_WIDTH - DOOR_W - 20 - 40, // right boundary (before door)
     },
     spawnDoor: { x: 13, y: 227 },
@@ -1428,7 +1431,11 @@ function checkRatCollision() {
 
 function checkSpikeCollision() {
   const TILE_SIZE = 16;
+  const SPIKE_HITBOX_MARGIN = 10; // how much more forgiving the spike collision is vs the visual sprite
   let spikes = LEVELS[currentLevel].spikes || [];
+  let phw = player.hw - SPIKE_HITBOX_MARGIN;
+  let phh = player.hh - SPIKE_HITBOX_MARGIN;
+
   for (let i = 0; i < spikes.length; i++) {
     let s = spikes[i];
     let w = s.tilesW ? s.tilesW * TILE_SIZE : s.w;
@@ -1437,10 +1444,10 @@ function checkSpikeCollision() {
     let top = s.y - SPIKE_H;
     let bottom = s.y;
     if (
-      player.x + player.hw > left &&
-      player.x - player.hw < right &&
-      player.y + player.hh > top &&
-      player.y - player.hh < bottom
+      player.x + phw > left &&
+      player.x - phw < right &&
+      player.y + phh > top &&
+      player.y - phh < bottom
     ) {
       triggerFaint();
       return;
