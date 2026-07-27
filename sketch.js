@@ -637,20 +637,21 @@ const LEVELS = [
       // ── LEFT: spawn ledge — the spawn door and the player start sit here. ──
       { x: 0, y: 448, tilesW: 13, tilesH: 1 }, // 0..208
 
-      // ── LEFT: zigzag stair-wall climbing from the spawn ledge up to the
-      // spike crossing. The player hops up it; the upper lantern rests on the
-      // second stair from the top (the y:328 step). ──
+      // ── LEFT: staircase climbing up-right from the spawn ledge to the
+      // spike crossing (each step +24px right, -24px up). The player hops up
+      // it; the upper lantern rests on the second stair from the top. ──
       { x: 160, y: 424, tilesW: 3, tilesH: 1 },
-      { x: 200, y: 400, tilesW: 3, tilesH: 1 },
-      { x: 168, y: 376, tilesW: 3, tilesH: 1 },
-      { x: 216, y: 352, tilesW: 3, tilesH: 1 },
-      { x: 184, y: 328, tilesW: 3, tilesH: 1 }, // upper lantern sits here
-      { x: 232, y: 304, tilesW: 3, tilesH: 1 }, // top stair, next to the crossing
+      { x: 184, y: 400, tilesW: 3, tilesH: 1 },
+      { x: 208, y: 376, tilesW: 3, tilesH: 1 },
+      { x: 232, y: 352, tilesW: 3, tilesH: 1 },
+      { x: 256, y: 328, tilesW: 3, tilesH: 1 }, // upper lantern rests here
+      { x: 280, y: 304, tilesW: 3, tilesH: 1 }, // top stair, meets the crossing
 
-      // ── MID: elevated ledge, aligned with the rest of the y:448 floor. The
-      // lower lantern hangs above its left; the lower-mid phantom (PHANTOMS[2])
-      // fills the gap between the zigzag wall and this ledge. ──
-      { x: 368, y: 448, tilesW: 10, tilesH: 1 }, // 368..528
+      // ── MID: elevated ledge, aligned with the rest of the y:448 floor.
+      // Spans to x:576 so it meets the cannon tunnel with no gap. The lower
+      // lantern hangs above it; the lower-mid phantom (PHANTOMS[2]) fills the
+      // gap between the staircase and this ledge. ──
+      { x: 368, y: 448, tilesW: 13, tilesH: 1 }, // 368..576, meets the cannon tunnel
 
       // ── TOP-MID: long spike-topped crossing (spikes[] below). The phantom
       // bridge (PHANTOMS[2]) blinks in above it; miss the timing and you land
