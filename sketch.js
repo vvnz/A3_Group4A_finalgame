@@ -668,9 +668,8 @@ const LEVELS = [
     ],
     spikes: [
       { x: 288, y: 272, tilesW: 26 }, // the long top-mid crossing
-      { x: 336, y: CANVAS_HEIGHT - 16, tilesW: 1 }, // three single spikes on the
+      { x: 336, y: CANVAS_HEIGHT - 16, tilesW: 1 }, // two single spikes on the
       { x: 496, y: CANVAS_HEIGHT - 16, tilesW: 1 }, // ground floor, easily cleared
-      { x: 656, y: CANVAS_HEIGHT - 16, tilesW: 1 }, // in a jump
     ],
     // Level 3 has its own cannon placeholder and two patrolling mice — see
     // level3extras.js (CANNONS[2] / EXTRA_RATS[2]). The single-rat system
