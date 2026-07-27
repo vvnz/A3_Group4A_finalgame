@@ -551,40 +551,63 @@ const LEVELS = [
     start: { x: 56, y: 560 },
     platforms: [
       // Layout follows the Level 2 design sketch. A central wall splits the
-      // arena into a LEFT region (spawn) and a RIGHT region (exit + rat);
-      // the only way across is over the top, gated by the phantom platforms
-      // in phantom.js (PHANTOMS[1]). Regular platforms are listed here.
+      // arena into a LEFT region (spawn) and a RIGHT region (exit); the only
+      // way across is over the top, gated by the top-center phantom platform
+      // (phantom.js PHANTOMS[1]) and the side-to-side moving platform below.
+      //
+      // Platforms sit on 80px vertical bands (y = 64/144/224/304/384/464/
+      // 544/624), all multiples of 16 so each tiles to a single 16px block
+      // and there's clear breathing room between them.
 
       // ── World frame ──
-      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 }, // ground floor
-      { x: 0, y: 56, tilesW: 60, tilesH: 1 }, // top ceiling band
-      { x: 600, y: 112, tilesW: 22, tilesH: 1 }, // top-right ledge
+      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 }, // ground floor (624)
+      { x: 0, y: 64, tilesW: 60, tilesH: 1 }, // top ceiling band
+      // (No top-right ledge — it let the player walk over and skip the spikes.)
 
       // ── Central dividing wall (blocks the floor; cross over the top) ──
-      { x: 456, y: 288, tilesW: 2, tilesH: 21 }, // wall down to the floor
-      { x: 488, y: 304, tilesW: 22, tilesH: 1 }, // right ledge (spikes on top)
-      { x: 848, y: 304, tilesW: 7, tilesH: 1 }, // safe landing past the spikes
+      { x: 448, y: 272, tilesW: 2, tilesH: 22 }, // wall down to the floor
+      { x: 480, y: 304, tilesW: 21, tilesH: 1 }, // right ledge (spikes on top)
+      { x: 816, y: 304, tilesW: 5, tilesH: 1 }, // safe landing (816-896); ends just past the lantern so the player drops through the cutaway after it
 
       // ── LEFT region: staircase up to the top-left lantern & crossing ──
-      { x: 80, y: 552, tilesW: 6, tilesH: 1 },
-      { x: 210, y: 480, tilesW: 6, tilesH: 1 },
-      { x: 70, y: 408, tilesW: 8, tilesH: 1 },
-      { x: 200, y: 336, tilesW: 9, tilesH: 1 }, // under the top-left lantern
-      { x: 300, y: 496, tilesW: 8, tilesH: 1 }, // lower ledge near the wall
+      // NOTE: the second step (x:224,y:464) is a PHANTOM (PHANTOMS[1]) — the
+      // climb is gated on timing it, so it isn't listed here.
+      { x: 96, y: 544, tilesW: 6, tilesH: 1 },
+      { x: 64, y: 384, tilesW: 7, tilesH: 1 },
+      { x: 200, y: 304, tilesW: 8, tilesH: 1 }, // under the top-left lantern
+      { x: 336, y: 544, tilesW: 7, tilesH: 1 }, // low ledge near the wall base
 
-      // ── RIGHT region: crossing landing, descent to the exit ──
-      { x: 500, y: 236, tilesW: 9, tilesH: 1 }, // right-center upper (crossing)
-      { x: 800, y: 440, tilesW: 8, tilesH: 1 }, // under the right lantern
-      { x: 520, y: 520, tilesW: 7, tilesH: 1 }, // center-right low
+      // ── RIGHT region: crossing landing + descent to the exit ──
+      { x: 504, y: 224, tilesW: 6, tilesH: 1 }, // landing after the top crossing
+      // Side-to-side MOVING platform (regular — always solid). Ferries the
+      // player across the spike pit; carries them along as it slides.
+      {
+        x: 620,
+        y: 224,
+        tilesW: 7,
+        tilesH: 1,
+        moveMinX: 620,
+        moveMaxX: 820,
+        moveSpeed: 1.2,
+      },
+      // Ending staircase: drop through the cutaway after the lantern onto the
+      // upper step, then down-left across the phantom (PHANTOMS[1]) to the
+      // lower step, then to the floor and the exit.
+      { x: 816, y: 384, tilesW: 7, tilesH: 1 }, // upper step (under the cutaway)
+      { x: 512, y: 544, tilesW: 7, tilesH: 1 }, // lower step
     ],
-    // Phantom platforms for this level are defined in phantom.js (PHANTOMS[1]);
-    // the one over the spike pit moves back and forth (moveMinX/moveMaxX).
+    // Three phantom platforms (top-center gate, left-climb step, right-low)
+    // are in phantom.js (PHANTOMS[1]).
     spikes: [
-      { x: 456, y: 288, tilesW: 2 }, // spike atop the dividing wall
-      { x: 488, y: 304, tilesW: 22 }, // spike field on the right ledge
+      { x: 448, y: 272, tilesW: 2 }, // spike atop the dividing wall
+      { x: 480, y: 304, tilesW: 21 }, // spike field on the right ledge
     ],
-    // Rat patrols the RIGHT region floor, between the wall and the exit door.
-    rat: { minX: 520, maxX: 812 },
+    // Two rats: one patrols the LEFT floor near the spawn, one the RIGHT
+    // floor near the exit.
+    rats: [
+      { minX: 200, maxX: 400 },
+      { minX: 520, maxX: 800 },
+    ],
     spawnDoor: { x: 20, y: CANVAS_HEIGHT - 16 - DOOR_H }, // bottom-left, on floor
     exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - 16 - DOOR_H }, // bottom-right
   },
@@ -669,7 +692,9 @@ let player = {
   visible: true,
 };
 
-let rat = { x: 0, dir: 1, active: false };
+// Active rats for the current level. A level defines them via `rats: [...]`
+// (multiple) or a single `rat: {...}`; loadLevel() builds this list.
+let rats = [];
 
 let characterSheet;
 let levelImages = [];
@@ -871,6 +896,9 @@ function applyIntroPhysics() {
       player.y = top - player.hh;
       player.vy = 0;
       player.onGround = true;
+      // Carry the player along with a moving platform they're standing on
+      // (no-op for static platforms — platformDX returns 0).
+      if (p.moveMinX !== undefined) player.x += platformDX(p);
     } else if (
       player.vy < 0 &&
       prevTop >= bottom &&
@@ -1543,14 +1571,9 @@ function loadLevel(index) {
   player.faintFlash = 0;
   player.visible = true;
 
-  let ratData = LEVELS[index].rat;
-  if (ratData) {
-    rat.active = true;
-    rat.x = ratData.minX;
-    rat.dir = 1;
-  } else {
-    rat.active = false;
-  }
+  // Support either a single `rat` or a list of `rats` per level.
+  let ratDefs = LEVELS[index].rats || (LEVELS[index].rat ? [LEVELS[index].rat] : []);
+  rats = ratDefs.map((d) => ({ minX: d.minX, maxX: d.maxX, x: d.minX, dir: 1 }));
 
   exitDoorOpen = false;
   winDelayTimer = 0;
@@ -1627,48 +1650,45 @@ function triggerFaint() {
 }
 
 function updateRat() {
-  if (!rat.active) return;
-  let ratData = LEVELS[currentLevel].rat;
-
-  rat.x += RAT_SPEED * rat.dir;
-
-  if (rat.x >= ratData.maxX) {
-    rat.x = ratData.maxX;
-    rat.dir = -1;
-  } else if (rat.x <= ratData.minX) {
-    rat.x = ratData.minX;
-    rat.dir = 1;
+  for (let rat of rats) {
+    rat.x += RAT_SPEED * rat.dir;
+    if (rat.x >= rat.maxX) {
+      rat.x = rat.maxX;
+      rat.dir = -1;
+    } else if (rat.x <= rat.minX) {
+      rat.x = rat.minX;
+      rat.dir = 1;
+    }
   }
 }
 
 function drawRat() {
-  if (!rat.active) return;
-
   let ratY = CANVAS_HEIGHT - 16 - RAT_SIZE / 2;
   let ratWidth = RAT_SIZE * (imgRat.width / imgRat.height);
-  push();
-  imageMode(CENTER);
-  translate(rat.x, ratY);
-  // image faces left by default — flip horizontally when moving right
-  if (rat.dir === 1) scale(-1, 1);
-  image(imgRat, 0, 0, ratWidth, RAT_SIZE);
-  pop();
+  for (let rat of rats) {
+    push();
+    imageMode(CENTER);
+    translate(rat.x, ratY);
+    // image faces left by default — flip horizontally when moving right
+    if (rat.dir === 1) scale(-1, 1);
+    image(imgRat, 0, 0, ratWidth, RAT_SIZE);
+    pop();
+  }
 }
 
 function checkRatCollision() {
-  if (!rat.active) return;
-
   let ratHalf = RAT_SIZE / 2;
-  let ratCx = rat.x;
   let ratCy = CANVAS_HEIGHT - 16 - ratHalf;
-
-  if (
-    player.x + player.hw > ratCx - ratHalf &&
-    player.x - player.hw < ratCx + ratHalf &&
-    player.y + player.hh > ratCy - ratHalf &&
-    player.y - player.hh < ratCy + ratHalf
-  ) {
-    triggerFaint();
+  for (let rat of rats) {
+    if (
+      player.x + player.hw > rat.x - ratHalf &&
+      player.x - player.hw < rat.x + ratHalf &&
+      player.y + player.hh > ratCy - ratHalf &&
+      player.y - player.hh < ratCy + ratHalf
+    ) {
+      triggerFaint();
+      return;
+    }
   }
 }
 
@@ -1764,6 +1784,9 @@ function applyPhysics() {
       player.y = top - player.hh;
       player.vy = 0;
       player.onGround = true;
+      // Carry the player along with a moving platform they're standing on
+      // (no-op for static platforms — platformDX returns 0).
+      if (p.moveMinX !== undefined) player.x += platformDX(p);
     } else if (
       player.vy < 0 &&
       prevTop >= bottom &&
@@ -1793,15 +1816,17 @@ function drawPlatforms() {
     let w = p.tilesW * TILE_SIZE;
     let h = p.tilesH * TILE_SIZE;
 
+    let px = movingX(p); // live x (moving platforms slide horizontally)
+
     if (p.barrel) {
-      image(imgBarrel, p.x, p.y, w, h);
+      image(imgBarrel, px, p.y, w, h);
     } else {
       // Tile from global origin for alignment across platforms
-      let startX = Math.floor(p.x / TILE_SIZE) * TILE_SIZE;
+      let startX = Math.floor(px / TILE_SIZE) * TILE_SIZE;
       let startY = Math.floor(p.y / TILE_SIZE) * TILE_SIZE;
 
       for (let tileY = startY; tileY < p.y + h; tileY += TILE_SIZE) {
-        for (let tileX = startX; tileX < p.x + w; tileX += TILE_SIZE) {
+        for (let tileX = startX; tileX < px + w; tileX += TILE_SIZE) {
           image(imgPlatformTile, tileX, tileY, TILE_SIZE, TILE_SIZE);
         }
       }
