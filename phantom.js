@@ -20,37 +20,34 @@
 const PHANTOMS = {
   0: [], // Level 1
   1: [
-    // Level 2 — see the level layout in sketch.js (LEVELS[1]).
-    // E: top-center gate — the way across the top of the dividing wall.
-    { x: 336, y: 264, tilesW: 7, tilesH: 1, phase: 0 },
-    // F: moving ferry over the right-side spike pit. Fast enough to cross
-    // within a single visible window if boarded as it appears on the left.
-    {
-      x: 690,
-      y: 230,
-      tilesW: 7,
-      tilesH: 1,
-      phase: 0.34,
-      moveMinX: 690,
-      moveMaxX: 840,
-      moveSpeed: 2,
-    },
-    // K: low-left bonus ledge.
-    { x: 24, y: 456, tilesW: 9, tilesH: 1, phase: 0.67 },
-    // N: center-lower ledge in the right region.
-    { x: 648, y: 466, tilesW: 7, tilesH: 1, phase: 0.5 },
+    // Level 2 — all y values are multiples of 16 so each tiles to a single
+    // 16px-tall block.
+    // Top-center: the gate across the top of the dividing wall.
+    { x: 336, y: 224, tilesW: 7, tilesH: 1, phase: 0 },
+    // Second step of the LEFT climb — must be timed to ascend (was a regular
+    // platform; the old left-mid phantom beside it was skippable and removed).
+    { x: 224, y: 464, tilesW: 6, tilesH: 1, phase: 0.34 },
+    // Right-low: bonus ledge in the right region.
+    { x: 648, y: 464, tilesW: 7, tilesH: 1, phase: 0.67 },
   ],
   2: [
-    // Level 3 — see the level layout in sketch.js (LEVELS[2]).
-    // Fills the gap in the cannon tunnel's floor, right past the spawn.
-    { x: 160, y: 528, tilesW: 12, tilesH: 1, phase: 0 },
-    // Bridge across the spike crossing up top — the platform at y:344
-    // spanning x:640-816 is the spike-topped floor beneath; miss the
-    // timing here and you fall onto it. Lands flush with the safe
-    // platform at x:816 in LEVELS[2].
-    { x: 640, y: 264, tilesW: 3, tilesH: 1, phase: 0.2 },
-    { x: 704, y: 264, tilesW: 3, tilesH: 1, phase: 0.45 },
-    { x: 768, y: 264, tilesW: 3, tilesH: 1, phase: 0.7 },
+    // Level 3 — see the level layout in sketch.js (LEVELS[2]). Blue in the
+    // sketch / colour map = phantom platforms.
+    // Bridge blinking in ABOVE the long spike crossing (spikes at y:272,
+    // x:288..704) — three staggered segments; miss the timing and you fall
+    // onto the spikes below.
+    // Phases stagger appearance left-to-right (1 -> 2 -> 3) so the player can
+    // hop across them in order. (Higher phase = appears earlier, so 2 and 3
+    // carry the larger phases.)
+    { x: 304, y: 224, tilesW: 6, tilesH: 1, phase: 0 }, // 1 - appears first
+    { x: 448, y: 224, tilesW: 8, tilesH: 1, phase: 0.66 }, // 2 - second
+    { x: 624, y: 224, tilesW: 6, tilesH: 1, phase: 0.33 }, // 3 - last
+    // Right-side stretch continuing off the safe landing toward the far edge.
+    { x: 832, y: 272, tilesW: 8, tilesH: 1, phase: 0.15 },
+    // Lower-mid phantom — aligned with the y:448 floor, its length fits
+    // exactly between the zigzag stair-wall (spawn ledge ends at x:208) and
+    // the elevated ledge (starts at x:368).
+    { x: 208, y: 448, tilesW: 10, tilesH: 1, phase: 0.4 },
   ], // Level 3
 };
 
@@ -88,29 +85,40 @@ function phantomAlpha(ph) {
   return 255;
 }
 
-// Current x of a phantom this frame. Static phantoms return their fixed x;
-// moving ones ping-pong horizontally between moveMinX and moveMaxX at
-// moveSpeed px/frame (default 1).
-function phantomX(ph) {
-  if (ph.moveMinX === undefined || ph.moveMaxX === undefined) return ph.x;
-  let span = ph.moveMaxX - ph.moveMinX;
-  if (span <= 0) return ph.moveMinX;
-  let speed = ph.moveSpeed || 1;
-  let t = (frameCount * speed) % (span * 2);
-  let off = t <= span ? t : span * 2 - t; // triangle wave 0..span..0
-  return ph.moveMinX + off;
+// Live x this frame for any platform that ping-pongs horizontally
+// (moveMinX/moveMaxX/moveSpeed). Static platforms (no move fields) return their
+// fixed x. Shared by phantom AND regular moving platforms. Pass a specific
+// `frame` to sample another moment (used to derive the per-frame drift below).
+function movingX(p, frame = frameCount) {
+  if (p.moveMinX === undefined || p.moveMaxX === undefined) return p.x;
+  let span = p.moveMaxX - p.moveMinX;
+  if (span <= 0) return p.moveMinX;
+  let speed = p.moveSpeed || 1;
+  let period = span * 2;
+  let t = (((frame * speed) % period) + period) % period; // 0..period
+  let off = t <= span ? t : period - t; // triangle wave 0..span..0
+  return p.moveMinX + off;
+}
+
+// How far a moving platform shifted horizontally since last frame — used by
+// applyPhysics() to carry a standing player along with it.
+function platformDX(p) {
+  if (p.moveMinX === undefined) return 0;
+  return movingX(p, frameCount) - movingX(p, frameCount - 1);
 }
 
 // Regular platforms plus any phantoms currently visible — used by every
-// collision routine so phantoms are solid exactly while they're on screen.
-// Visible phantoms are returned as copies with their live (possibly moving)
-// x, so collision always uses the platform's current position.
+// collision routine. Both regular movers and visible phantoms are returned as
+// copies with their live x, so collision always uses the current position.
 function getActivePlatforms() {
-  let platforms = LEVELS[currentLevel].platforms || [];
+  let raw = LEVELS[currentLevel].platforms || [];
+  let platforms = raw.map((p) =>
+    p.moveMinX !== undefined ? { ...p, x: movingX(p) } : p,
+  );
   let phantoms = PHANTOMS[currentLevel] || [];
   let visible = phantoms
     .filter(isPhantomVisible)
-    .map((ph) => ({ ...ph, x: phantomX(ph) }));
+    .map((ph) => ({ ...ph, x: movingX(ph) }));
   return platforms.concat(visible);
 }
 
@@ -126,7 +134,7 @@ function drawPhantoms() {
     let a = phantomAlpha(ph);
     if (a <= 0) continue;
     tint(255, a);
-    let px = phantomX(ph); // live x (moving phantoms slide horizontally)
+    let px = movingX(ph); // live x (moving phantoms slide horizontally)
     let w = ph.tilesW * TILE_SIZE;
     let h = ph.tilesH * TILE_SIZE;
     let startX = Math.floor(px / TILE_SIZE) * TILE_SIZE;
