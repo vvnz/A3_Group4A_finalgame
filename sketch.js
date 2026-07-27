@@ -397,41 +397,76 @@ const INTRO_LOGO = {
 };
 let logoAlpha = 255;
 
+// ============================================================
+// LEVEL 1 — repositioned per layout sketch
+//
+// Ground is now three thick chunks with two gaps:
+//   Block A (0–176)  |  gap 1 (176–352)  |  Block B (352–608)
+//   |  gap 2 (608–784)  |  Block C (784–960, exit door sits here)
+//
+// Gap 1 has a shallow floor ~64px down so it's a jumpable pit.
+// Gap 2 has spikes flush with ground level — falling in is fatal.
+// Rat removed from this level.
+// ============================================================
 const LEVELS = [
   {
     name: "Level 1",
     background: "assets/images/lvl1background.png",
     backgroundColor: [150, 75, 0],
     start: { x: 40, y: 200 },
+
     platforms: [
       { x: 0, y: 304, tilesW: 49, tilesH: 1 },
 
-      { x: 320, y: 432, tilesW: 7, tilesH: 1 }, //floating staircase 2
+      { x: 784, y: 448, tilesW: 5, tilesH: 1 }, //horizontal one attached to the vertical
+      { x: 272, y: 432, tilesW: 7, tilesH: 1 }, //furthest left floating platform updated
+      { x: 432, y: 480, tilesW: 7, tilesH: 1 }, //middle platform updated
+      { x: 608, y: 432, tilesW: 7, tilesH: 1 }, //first platform on the right
 
+      { x: 848, y: 400, tilesW: 1, tilesH: 4 }, //vertical wall 3
+      { x: 848, y: 384, tilesW: 9, tilesH: 1 }, //top of vertical wall 3
+
+      { x: 0, y: 544, tilesW: 17, tilesH: 50 }, // big block on the left
+
+      // ground floor split into 3 segments
+      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 40, tilesH: 1 }, // floor A
+      { x: 640, y: CANVAS_HEIGHT + 40, tilesW: 5, tilesH: 1 }, // safe pit floor
+      { x: 720, y: CANVAS_HEIGHT - 16, tilesW: 7, tilesH: 1 }, // floor B
+      { x: 832, y: CANVAS_HEIGHT - 16, tilesW: 8, tilesH: 1 }, // floor C
+
+      // barrels
       {
         x: 480,
         y: CANVAS_HEIGHT - 16 - 48,
         tilesW: 3,
         tilesH: 3,
         barrel: true,
-      }, //barrel (uses barrel.png image)
+      },
       {
         x: 30,
         y: 498,
         tilesW: 3,
         tilesH: 3,
         barrel: true,
-      }, //barrel under second lantern
+      },
+      { x: 160, y: 256, tilesW: 3, tilesH: 3, barrel: true },
+      { x: 320, y: 256, tilesW: 3, tilesH: 3, barrel: true },
+      { x: 368, y: 256, tilesW: 3, tilesH: 3, barrel: true },
+      { x: 344, y: 208, tilesW: 3, tilesH: 3, barrel: true },
+      { x: 512, y: 256, tilesW: 3, tilesH: 3, barrel: true },
+      { x: 560, y: 256, tilesW: 3, tilesH: 3, barrel: true },
+    ],
 
-      { x: 160, y: 256, tilesW: 3, tilesH: 3, barrel: true }, //first barrel — right as player exits the spawn door
-      { x: 320, y: 256, tilesW: 3, tilesH: 3, barrel: true }, //starter barrels: bottom-left
-      { x: 368, y: 256, tilesW: 3, tilesH: 3, barrel: true }, //starter barrels: bottom-right
-      { x: 344, y: 208, tilesW: 3, tilesH: 3, barrel: true }, //starter barrels: top (stacked, player jumps this)
-    ],
-    spikes: [
-      { x: 760, y: CANVAS_HEIGHT - 16, tilesW: 4 }, // sits on floor B — the deadly one
-    ],
-    rat: { minX: 300, maxX: 455 },
+    // spikes now guard gap 2, flush with ground level
+    spikes: [{ x: 432, y: 304, tilesW: 4 }],
+
+    rat: {
+      x: 280, // starts just right of the big ground block
+      y: CANVAS_HEIGHT - 32, // stands on the floor
+      speed: 1.2, // smooth walk
+      minX: 280, // left boundary (big block)
+      maxX: CANVAS_WIDTH - DOOR_W - 20 - 40, // right boundary (before door)
+    },
     spawnDoor: { x: 13, y: 227 },
     exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
   },
@@ -439,7 +474,6 @@ const LEVELS = [
     name: "Level 2",
     background: "assets/images/lvl1background.png",
     backgroundColor: [150, 75, 0],
-
     start: { x: 56, y: 560 },
     platforms: [
       { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 },
@@ -464,67 +498,16 @@ const LEVELS = [
       { x: 456, y: 288, tilesW: 2 },
       { x: 488, y: 304, tilesW: 22 },
     ],
-    rat: { minX: 520, maxX: 812 },
+
     spawnDoor: { x: 20, y: CANVAS_HEIGHT - 16 - DOOR_H },
     exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - 16 - DOOR_H },
   },
   {
     name: "Level 3 — Mastery",
-    // Reuse the Level 1 background for now, same as Level 2, until real
-    // Level 3 art exists.
-    background: "assets/images/lvl1background.png",
+    background: null,
     backgroundColor: [25, 30, 45],
-    // Spawn on the entry platform, right next to the spawn door.
-    start: { x: 60, y: 500 },
-    platforms: [
-      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 }, // ground floor
-      { x: 0, y: 64, tilesW: 60, tilesH: 1 }, // top ceiling band (decorative)
-
-      // ── Cannon tunnel floor: entry platform, then a phantom-gated gap
-      // (PHANTOMS[2] in phantom.js) right past the spawn door, then a
-      // regular stretch with a jump-gap right before the cannon — the
-      // drop from the upper crossing (below) lines up with that gap.
-      { x: 16, y: 528, tilesW: 9, tilesH: 1 },
-      { x: 352, y: 528, tilesW: 29, tilesH: 1 },
-      { x: 896, y: 528, tilesW: 4, tilesH: 1 }, // the cannon sits at the end of this
-
-      // ── Staircase climbing up from the tunnel floor (Rat 1 patrols the
-      // final, widened landing) — each step is only a small hop above the
-      // last, empirically verified to clear reliably; two lanterns sit in
-      // gaps partway up. A single big jump here reliably bonks the head on
-      // whatever's above before it can clear onto the next step.
-      { x: 180, y: 504, tilesW: 6, tilesH: 1 },
-      { x: 220, y: 480, tilesW: 6, tilesH: 1 },
-      { x: 260, y: 456, tilesW: 6, tilesH: 1 },
-      { x: 300, y: 432, tilesW: 6, tilesH: 1 },
-      { x: 340, y: 408, tilesW: 6, tilesH: 1 },
-      { x: 380, y: 384, tilesW: 6, tilesH: 1 },
-      { x: 420, y: 352, tilesW: 13, tilesH: 1 }, // final landing, 420-628
-
-      // ── Spike-topped crossing (also in spikes[] below), and the safe
-      // landing right after it — the phantom bridge (PHANTOMS[2]) crosses
-      // above this, landing flush with the safe platform's left edge, and
-      // the safe platform sits directly above the tunnel's jump-gap so
-      // dropping through lands you right back in the cannon tunnel.
-      { x: 640, y: 344, tilesW: 11, tilesH: 1 },
-      { x: 816, y: 344, tilesW: 5, tilesH: 1 },
-
-      // ── Barrels, bottom-left — just decorative, fill space ──
-      { x: 32, y: CANVAS_HEIGHT - 16 - 48, tilesW: 3, tilesH: 3, barrel: true },
-      { x: 80, y: CANVAS_HEIGHT - 16 - 48, tilesW: 3, tilesH: 3, barrel: true },
-      { x: 56, y: CANVAS_HEIGHT - 16 - 96, tilesW: 3, tilesH: 3, barrel: true },
-    ],
-    spikes: [
-      { x: 640, y: 344, tilesW: 11 }, // beneath the phantom bridge
-      { x: 325, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // three small clusters on the
-      { x: 485, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // ground floor, before the
-      { x: 647, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // exit
-    ],
-    // Level 3 has its own cannon hazard and two extra patrolling rats — see
-    // level3extras.js. The single-rat system below (rat/RAT_SPEED/etc.) is
-    // left untouched and simply unused for this level.
-    spawnDoor: { x: 13, y: 451 },
-    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
+    start: { x: 100, y: 320 },
+    platforms: [],
   },
 ];
 
@@ -1803,6 +1786,20 @@ function drawLoseScreen() {
 }
 
 function keyPressed() {
+  if (keyCode === ENTER) {
+    // Level bark active? Advance it.
+    if (levelBark) {
+      advanceLevelBark();
+      return;
+    }
+
+    // Intro dialogue active? Advance it.
+    if (dialogueActive && !dialogueCompleted) {
+      advanceDialogue();
+      return;
+    }
+  }
+
   if (
     keyCode === 89 &&
     (gameState === STATE.SPLASH || gameState === STATE.START)
