@@ -21,10 +21,11 @@ const LANTERNS = {
     { x: 872, y: 256, w: 40, h: 64 }, // hangs above the safe far-right ledge (y304)
   ],
   2: [
-    // Level 3 — one partway up the staircase, one closer to the top (see
-    // LEVELS[2] in sketch.js).
-    { x: 240, y: 460, w: 40, h: 64 },
-    { x: 360, y: 390, w: 40, h: 64 },
+    // Level 3 — wall-hung lanterns (yellow on the sketch / colour map): one
+    // on the wall just past the upper-left mouse ledge (top 320), one above
+    // the left spawn ledge (top 448). See LEVELS[2] in sketch.js.
+    { x: 216, y: 300, w: 40, h: 64 },
+    { x: 200, y: 400, w: 40, h: 64 },
   ], // Level 3
 };
 

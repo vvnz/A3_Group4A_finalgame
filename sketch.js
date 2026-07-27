@@ -612,62 +612,62 @@ const LEVELS = [
     exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - 16 - DOOR_H }, // bottom-right
   },
   {
-    name: "Level 3 — Mastery",
+    name: "Level 3",
     // Reuse the Level 1 background for now, same as Level 2, until real
     // Level 3 art exists.
     background: "assets/images/lvl1background.png",
     backgroundColor: [25, 30, 45],
-    // Spawn on the entry platform, right next to the spawn door.
-    start: { x: 60, y: 500 },
+    // Spawn on the left entry ledge, right beside the spawn door (the door
+    // circled in red on the Level 3 sketch).
+    start: { x: 48, y: 412 },
+    // Layout follows the Level 3 sketch / colour map. Every green brick
+    // platform is a single block tall (tilesH: 1); barrels use the barrel
+    // asset. Tiers (top-of-platform y): 64 ceiling, 272 spike crossing,
+    // 320 upper-left mouse ledge, 448 spawn ledge + cannon tunnel, 496
+    // lower-mid ledge, 624 ground floor.
     platforms: [
-      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 }, // ground floor
+      // ── World frame ──
+      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 }, // ground floor (624)
       { x: 0, y: 64, tilesW: 60, tilesH: 1 }, // top ceiling band (decorative)
 
-      // ── Cannon tunnel floor: entry platform, then a phantom-gated gap
-      // (PHANTOMS[2] in phantom.js) right past the spawn door, then a
-      // regular stretch with a jump-gap right before the cannon — the
-      // drop from the upper crossing (below) lines up with that gap.
-      { x: 16, y: 528, tilesW: 9, tilesH: 1 },
-      { x: 352, y: 528, tilesW: 29, tilesH: 1 },
-      { x: 896, y: 528, tilesW: 4, tilesH: 1 }, // the cannon sits at the end of this
+      // ── LEFT: upper mouse ledge (a mouse patrols along it; the upper
+      // lantern hangs on the wall just past its right end). ──
+      { x: 32, y: 320, tilesW: 11, tilesH: 1 }, // 32..208
 
-      // ── Staircase climbing up from the tunnel floor (Rat 1 patrols the
-      // final, widened landing) — each step is only a small hop above the
-      // last, empirically verified to clear reliably; two lanterns sit in
-      // gaps partway up. A single big jump here reliably bonks the head on
-      // whatever's above before it can clear onto the next step.
-      { x: 180, y: 504, tilesW: 6, tilesH: 1 },
-      { x: 220, y: 480, tilesW: 6, tilesH: 1 },
-      { x: 260, y: 456, tilesW: 6, tilesH: 1 },
-      { x: 300, y: 432, tilesW: 6, tilesH: 1 },
-      { x: 340, y: 408, tilesW: 6, tilesH: 1 },
-      { x: 380, y: 384, tilesW: 6, tilesH: 1 },
-      { x: 420, y: 352, tilesW: 13, tilesH: 1 }, // final landing, 420-628
+      // ── LEFT: spawn ledge — the spawn door and the player start sit here. ──
+      { x: 0, y: 448, tilesW: 13, tilesH: 1 }, // 0..208
 
-      // ── Spike-topped crossing (also in spikes[] below), and the safe
-      // landing right after it — the phantom bridge (PHANTOMS[2]) crosses
-      // above this, landing flush with the safe platform's left edge, and
-      // the safe platform sits directly above the tunnel's jump-gap so
-      // dropping through lands you right back in the cannon tunnel.
-      { x: 640, y: 344, tilesW: 11, tilesH: 1 },
-      { x: 816, y: 344, tilesW: 5, tilesH: 1 },
+      // ── LEFT-MID: lower ledge — the lower lantern hangs above it and the
+      // lower-mid phantom (PHANTOMS[2]) fills the gap to its left. ──
+      { x: 368, y: 496, tilesW: 10, tilesH: 1 }, // 368..528
 
-      // ── Barrels, bottom-left — just decorative, fill space ──
+      // ── TOP-MID: long spike-topped crossing (spikes[] below). The phantom
+      // bridge (PHANTOMS[2]) blinks in above it; miss the timing and you land
+      // on the spikes. A safe landing follows on the right. ──
+      { x: 288, y: 272, tilesW: 26, tilesH: 1 }, // 288..704, spikes on top
+      { x: 704, y: 272, tilesW: 8, tilesH: 1 }, // 704..832 safe landing
+
+      // ── RIGHT: cannon tunnel floor — the cannon placeholder (a black
+      // square, see level3extras.js) sits at its right end and "fires" left
+      // down the corridor. ──
+      { x: 576, y: 448, tilesW: 24, tilesH: 1 }, // 576..960
+
+      // ── Barrels, bottom-left — stacked, decorative (barrel asset). ──
       { x: 32, y: CANVAS_HEIGHT - 16 - 48, tilesW: 3, tilesH: 3, barrel: true },
       { x: 80, y: CANVAS_HEIGHT - 16 - 48, tilesW: 3, tilesH: 3, barrel: true },
       { x: 56, y: CANVAS_HEIGHT - 16 - 96, tilesW: 3, tilesH: 3, barrel: true },
     ],
     spikes: [
-      { x: 640, y: 344, tilesW: 11 }, // beneath the phantom bridge
-      { x: 325, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // three small clusters on the
-      { x: 485, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // ground floor, before the
-      { x: 647, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // exit
+      { x: 288, y: 272, tilesW: 26 }, // the long top-mid crossing
+      { x: 352, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // three small clusters on the
+      { x: 512, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // ground floor, before the
+      { x: 672, y: CANVAS_HEIGHT - 16, tilesW: 5 }, // exit
     ],
-    // Level 3 has its own cannon hazard and two extra patrolling rats — see
-    // level3extras.js. The single-rat system below (rat/RAT_SPEED/etc.) is
-    // left untouched and simply unused for this level.
-    spawnDoor: { x: 13, y: 451 },
-    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
+    // Level 3 has its own cannon placeholder and two patrolling mice — see
+    // level3extras.js (CANNONS[2] / EXTRA_RATS[2]). The single-rat system
+    // below (rat/RAT_SPEED/etc.) is left untouched and simply unused here.
+    spawnDoor: { x: 13, y: 448 - DOOR_H }, // on the left spawn ledge (top 448)
+    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - 16 - DOOR_H }, // bottom-right on the floor
   },
 ];
 

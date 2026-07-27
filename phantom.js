@@ -31,16 +31,19 @@ const PHANTOMS = {
     { x: 648, y: 464, tilesW: 7, tilesH: 1, phase: 0.67 },
   ],
   2: [
-    // Level 3 — see the level layout in sketch.js (LEVELS[2]).
-    // Fills the gap in the cannon tunnel's floor, right past the spawn.
-    { x: 160, y: 528, tilesW: 12, tilesH: 1, phase: 0 },
-    // Bridge across the spike crossing up top — the platform at y:344
-    // spanning x:640-816 is the spike-topped floor beneath; miss the
-    // timing here and you fall onto it. Lands flush with the safe
-    // platform at x:816 in LEVELS[2].
-    { x: 640, y: 264, tilesW: 3, tilesH: 1, phase: 0.2 },
-    { x: 704, y: 264, tilesW: 3, tilesH: 1, phase: 0.45 },
-    { x: 768, y: 264, tilesW: 3, tilesH: 1, phase: 0.7 },
+    // Level 3 — see the level layout in sketch.js (LEVELS[2]). Blue in the
+    // sketch / colour map = phantom platforms.
+    // Bridge blinking in ABOVE the long spike crossing (spikes at y:272,
+    // x:288..704) — three staggered segments; miss the timing and you fall
+    // onto the spikes below.
+    { x: 304, y: 224, tilesW: 6, tilesH: 1, phase: 0 },
+    { x: 448, y: 224, tilesW: 8, tilesH: 1, phase: 0.33 },
+    { x: 624, y: 224, tilesW: 6, tilesH: 1, phase: 0.66 },
+    // Right-side stretch continuing off the safe landing toward the far edge.
+    { x: 832, y: 272, tilesW: 8, tilesH: 1, phase: 0.15 },
+    // Lower-mid phantom — fills the gap to the left of the lower ledge
+    // (green platform at x:368..528, y:496).
+    { x: 224, y: 496, tilesW: 9, tilesH: 1, phase: 0.4 },
   ], // Level 3
 };
 
