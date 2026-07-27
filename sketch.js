@@ -640,9 +640,9 @@ const LEVELS = [
       // ── LEFT: the lamp's step (right half kept) plus two vertical pillars
       // that connect it, edge-to-edge, down to the spawn ledge and up to the
       // spike crossing. The upper lantern rests on the step. ──
-      { x: 208, y: 384, tilesW: 4, tilesH: 1 }, // step tread (208..272)
-      { x: 208, y: 384, tilesW: 1, tilesH: 4 }, // pillar down to the spawn ledge (y384..448)
-      { x: 272, y: 272, tilesW: 1, tilesH: 7 }, // pillar up into the crossing (y272..384)
+      { x: 208, y: 400, tilesW: 4, tilesH: 1 }, // step tread (208..272), lowered so it's reachable
+      { x: 208, y: 400, tilesW: 1, tilesH: 3 }, // pillar down to the spawn ledge (y400..448)
+      { x: 272, y: 272, tilesW: 1, tilesH: 9 }, // pillar up into the crossing (y272..416, meets the tread bottom)
 
       // ── MID: elevated ledge, aligned with the rest of the y:448 floor.
       // Spans to x:576 so it meets the cannon tunnel with no gap. The lower
