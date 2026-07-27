@@ -40,7 +40,18 @@ const PHANTOMS = {
     // N: center-lower ledge in the right region.
     { x: 648, y: 466, tilesW: 7, tilesH: 1, phase: 0.5 },
   ],
-  2: [], // Level 3
+  2: [
+    // Level 3 — see the level layout in sketch.js (LEVELS[2]).
+    // Fills the gap in the cannon tunnel's floor, right past the spawn.
+    { x: 160, y: 528, tilesW: 12, tilesH: 1, phase: 0 },
+    // Bridge across the spike crossing up top — the platform at y:344
+    // spanning x:640-816 is the spike-topped floor beneath; miss the
+    // timing here and you fall onto it. Lands flush with the safe
+    // platform at x:816 in LEVELS[2].
+    { x: 640, y: 264, tilesW: 3, tilesH: 1, phase: 0.2 },
+    { x: 704, y: 264, tilesW: 3, tilesH: 1, phase: 0.45 },
+    { x: 768, y: 264, tilesW: 3, tilesH: 1, phase: 0.7 },
+  ], // Level 3
 };
 
 const PHANTOM_CYCLE_FRAMES = 210; // full period (~3.5s at 60fps)
