@@ -562,7 +562,7 @@ const LEVELS = [
       // ── World frame ──
       { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 }, // ground floor (624)
       { x: 0, y: 64, tilesW: 60, tilesH: 1 }, // top ceiling band
-      { x: 640, y: 144, tilesW: 16, tilesH: 1 }, // top-right ledge
+      // (No top-right ledge — it let the player walk over and skip the spikes.)
 
       // ── Central dividing wall (blocks the floor; cross over the top) ──
       { x: 448, y: 272, tilesW: 2, tilesH: 22 }, // wall down to the floor
@@ -570,8 +570,9 @@ const LEVELS = [
       { x: 816, y: 304, tilesW: 9, tilesH: 1 }, // safe landing past the spikes
 
       // ── LEFT region: staircase up to the top-left lantern & crossing ──
+      // NOTE: the second step (x:224,y:464) is a PHANTOM (PHANTOMS[1]) — the
+      // climb is gated on timing it, so it isn't listed here.
       { x: 96, y: 544, tilesW: 6, tilesH: 1 },
-      { x: 224, y: 464, tilesW: 6, tilesH: 1 },
       { x: 64, y: 384, tilesW: 7, tilesH: 1 },
       { x: 200, y: 304, tilesW: 8, tilesH: 1 }, // under the top-left lantern
       { x: 336, y: 544, tilesW: 7, tilesH: 1 }, // low ledge near the wall base
@@ -589,12 +590,13 @@ const LEVELS = [
         moveMaxX: 820,
         moveSpeed: 1.2,
       },
-      { x: 816, y: 384, tilesW: 7, tilesH: 1 }, // under the right lantern
+      // (No platform under the far-right ledge — it blocked the descent to
+      // the exit. After the crossing, drop from the safe ledge to the floor.)
       { x: 504, y: 464, tilesW: 7, tilesH: 1 }, // right ledge near the wall
       { x: 640, y: 544, tilesW: 7, tilesH: 1 }, // center-right low
     ],
-    // Three phantom platforms (top-center gate, left-mid, right-low) are in
-    // phantom.js (PHANTOMS[1]).
+    // Three phantom platforms (top-center gate, left-climb step, right-low)
+    // are in phantom.js (PHANTOMS[1]).
     spikes: [
       { x: 448, y: 272, tilesW: 2 }, // spike atop the dividing wall
       { x: 480, y: 304, tilesW: 21 }, // spike field on the right ledge

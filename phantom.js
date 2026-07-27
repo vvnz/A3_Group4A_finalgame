@@ -20,12 +20,13 @@
 const PHANTOMS = {
   0: [], // Level 1
   1: [
-    // Level 2 — the three blue-circled spots in the design sketch. All y
-    // values are multiples of 16 so each tiles to a single 16px-tall block.
+    // Level 2 — all y values are multiples of 16 so each tiles to a single
+    // 16px-tall block.
     // Top-center: the gate across the top of the dividing wall.
     { x: 336, y: 224, tilesW: 7, tilesH: 1, phase: 0 },
-    // Left-mid: bonus ledge in the left region.
-    { x: 48, y: 464, tilesW: 8, tilesH: 1, phase: 0.34 },
+    // Second step of the LEFT climb — must be timed to ascend (was a regular
+    // platform; the old left-mid phantom beside it was skippable and removed).
+    { x: 224, y: 464, tilesW: 6, tilesH: 1, phase: 0.34 },
     // Right-low: bonus ledge in the right region.
     { x: 648, y: 464, tilesW: 7, tilesH: 1, phase: 0.67 },
   ],

@@ -18,7 +18,7 @@ const LANTERNS = {
   1: [
     // Level 2 — wall lanterns above the top-left platform and the right ledge.
     { x: 264, y: 248, w: 40, h: 64 }, // over the top-left platform (y304)
-    { x: 872, y: 328, w: 40, h: 64 }, // over the right-mid platform (y384)
+    { x: 872, y: 256, w: 40, h: 64 }, // hangs above the safe far-right ledge (y304)
   ],
   2: [
     // Level 3 — one partway up the staircase, one closer to the top (see
