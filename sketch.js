@@ -434,7 +434,7 @@ const LEVELS = [
       // barrels
       {
         x: 432,
-        y: 464 - 48, // 3 tiles tall now, so shift up to keep it grounded on y:464
+        y: 464 - 48, // 3 tiles tall, shifted up to keep it grounded on y:464
         tilesW: 3,
         tilesH: 3,
         barrel: true,
@@ -1303,14 +1303,15 @@ function loadLevel(index) {
   player.faintFlash = 0;
   player.visible = true;
 
-  let ratData = LEVELS[index].rat;
-  if (ratData) {
-    rat.active = true;
-    rat.x = ratData.minX;
-    rat.dir = 1;
-  } else {
-    rat.active = false;
-  }
+  // Support either a single `rat` or a list of `rats` per level.
+  let ratDefs =
+    LEVELS[index].rats || (LEVELS[index].rat ? [LEVELS[index].rat] : []);
+  rats = ratDefs.map((d) => ({
+    minX: d.minX,
+    maxX: d.maxX,
+    x: d.minX,
+    dir: 1,
+  }));
 
   exitDoorOpen = false;
   winDelayTimer = 0;
