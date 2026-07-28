@@ -535,6 +535,8 @@ let player = {
   visible: true,
 };
 
+let rat = { x: 0, dir: 1, active: false };
+
 let characterSheet;
 let levelImages = [];
 let imgIntroBg;
@@ -1384,46 +1386,50 @@ function triggerFaint() {
 }
 
 function updateRat() {
-  for (let rat of rats) {
-    rat.x += RAT_SPEED * rat.dir;
-    if (rat.x >= rat.maxX) {
-      rat.x = rat.maxX;
-      rat.dir = -1;
-    } else if (rat.x <= rat.minX) {
-      rat.x = rat.minX;
-      rat.dir = 1;
-    }
+  if (!rat.active) return;
+  let ratData = LEVELS[currentLevel].rat;
+
+  rat.x += RAT_SPEED * rat.dir;
+
+  if (rat.x >= ratData.maxX) {
+    rat.x = ratData.maxX;
+    rat.dir = -1;
+  } else if (rat.x <= ratData.minX) {
+    rat.x = ratData.minX;
+    rat.dir = 1;
   }
 }
 
 function drawRat() {
+  if (!rat.active) return;
+
   let ratY = CANVAS_HEIGHT - 16 - RAT_SIZE / 2;
   let ratWidth = RAT_SIZE * (imgRat.width / imgRat.height);
-  for (let rat of rats) {
-    push();
-    imageMode(CENTER);
-    translate(rat.x, ratY);
-    if (rat.dir === 1) scale(-1, 1);
-    image(imgRat, 0, 0, ratWidth, RAT_SIZE);
-    pop();
-  }
+  push();
+  imageMode(CENTER);
+  translate(rat.x, ratY);
+  if (rat.dir === 1) scale(-1, 1);
+  image(imgRat, 0, 0, ratWidth, RAT_SIZE);
+  pop();
 }
 
 function checkRatCollision() {
+  if (!rat.active) return;
+
   let ratHalf = RAT_SIZE / 2;
+  let ratCx = rat.x;
   let ratCy = CANVAS_HEIGHT - 16 - ratHalf;
-  for (let rat of rats) {
-    if (
-      player.x + player.hw > rat.x - ratHalf &&
-      player.x - player.hw < rat.x + ratHalf &&
-      player.y + player.hh > ratCy - ratHalf &&
-      player.y - player.hh < ratCy + ratHalf
-    ) {
-      triggerFaint();
-      return;
-    }
+
+  if (
+    player.x + player.hw > ratCx - ratHalf &&
+    player.x - player.hw < ratCx + ratHalf &&
+    player.y + player.hh > ratCy - ratHalf &&
+    player.y - player.hh < ratCy + ratHalf
+  ) {
+    triggerFaint();
   }
 }
+
 function checkSpikeCollision() {
   const TILE_SIZE = 16;
   const SPIKE_HITBOX_MARGIN = 10; // how much more forgiving the spike collision is vs the visual sprite
