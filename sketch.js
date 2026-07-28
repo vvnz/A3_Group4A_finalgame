@@ -508,37 +508,61 @@ const LEVELS = [
     background: "assets/images/lvl1background.png",
     backgroundColor: [150, 75, 0],
     start: { x: 40, y: 200 },
+
     platforms: [
       { x: 0, y: 304, tilesW: 49, tilesH: 1 },
 
-      { x: 320, y: 432, tilesW: 7, tilesH: 1 }, //floating staircase 2
-      { x: 464, y: 496, tilesW: 6, tilesH: 1 }, //floating staircase 1
-      { x: 848, y: 400, tilesW: 1, tilesH: 3 }, //vertical wall 3
-      { x: 848, y: 384, tilesW: 7, tilesH: 1 }, //top of vertical wall 3
+      { x: 288, y: 464, tilesW: 36, tilesH: 1 }, //second layer platform
+
+      { x: 848, y: 400, tilesW: 1, tilesH: 4 }, //vertical wall 3
+      { x: 848, y: 384, tilesW: 9, tilesH: 1 }, //top of vertical wall 3
+
       { x: 0, y: 544, tilesW: 17, tilesH: 50 }, // big block on the left
-      { x: 784, y: 448, tilesW: 5, tilesH: 1 }, //floating staircase 1
+
+      // ground floor split into 3 segments
+      { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 40, tilesH: 1 }, // floor A
+      { x: 640, y: CANVAS_HEIGHT - 16, tilesW: 5, tilesH: 1 }, // filled gap
+      { x: 720, y: CANVAS_HEIGHT - 16, tilesW: 7, tilesH: 1 }, // floor B
+      { x: 832, y: CANVAS_HEIGHT - 16, tilesW: 8, tilesH: 1 }, // floor C
+
+      // barrels
       {
-        x: 480,
-        y: CANVAS_HEIGHT - 16 - 48,
+        x: 432,
+        y: 464 - 48, // 3 tiles tall, shifted up to keep it grounded on y:464
         tilesW: 3,
         tilesH: 3,
         barrel: true,
-      }, //barrel (uses barrel.png image)
+      },
       {
         x: 30,
         y: 498,
         tilesW: 3,
         tilesH: 3,
         barrel: true,
-      }, //barrel under second lantern
-
-      { x: 160, y: 256, tilesW: 3, tilesH: 3, barrel: true }, //first barrel — right as player exits the spawn door
-      { x: 320, y: 256, tilesW: 3, tilesH: 3, barrel: true }, //starter barrels: bottom-left
-      { x: 368, y: 256, tilesW: 3, tilesH: 3, barrel: true }, //starter barrels: bottom-right
-      { x: 344, y: 208, tilesW: 3, tilesH: 3, barrel: true }, //starter barrels: top (stacked, player jumps this)
+      },
+      { x: 160, y: 256, tilesW: 3, tilesH: 3, barrel: true },
+      { x: 320, y: 256, tilesW: 3, tilesH: 3, barrel: true },
+      { x: 368, y: 256, tilesW: 3, tilesH: 3, barrel: true },
+      { x: 344, y: 208, tilesW: 3, tilesH: 3, barrel: true },
+      { x: 512, y: 256, tilesW: 3, tilesH: 3, barrel: true },
+      { x: 560, y: 256, tilesW: 3, tilesH: 3, barrel: true },
     ],
-    spikes: [],
-    rat: { minX: 300, maxX: 455 },
+
+    // spikes now guard gap 2, flush with ground level
+    spikes: [
+      { x: 368, y: 464, tilesW: 1 },
+      { x: 528, y: 464, tilesW: 1 },
+      { x: 544, y: 464, tilesW: 1 }, // new spike, right next to the middle one
+      { x: 688, y: 464, tilesW: 1 },
+    ],
+
+    rat: {
+      x: 280,
+      y: CANVAS_HEIGHT - 32,
+      speed: 1.2,
+      minX: 280 + 16,
+      maxX: CANVAS_WIDTH - DOOR_W - 20 - 40,
+    },
     spawnDoor: { x: 13, y: 227 },
     exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - DOOR_H - 3 },
   },
@@ -1580,8 +1604,14 @@ function loadLevel(index) {
   player.visible = true;
 
   // Support either a single `rat` or a list of `rats` per level.
-  let ratDefs = LEVELS[index].rats || (LEVELS[index].rat ? [LEVELS[index].rat] : []);
-  rats = ratDefs.map((d) => ({ minX: d.minX, maxX: d.maxX, x: d.minX, dir: 1 }));
+  let ratDefs =
+    LEVELS[index].rats || (LEVELS[index].rat ? [LEVELS[index].rat] : []);
+  rats = ratDefs.map((d) => ({
+    minX: d.minX,
+    maxX: d.maxX,
+    x: d.minX,
+    dir: 1,
+  }));
 
   exitDoorOpen = false;
   winDelayTimer = 0;
@@ -1702,7 +1732,11 @@ function checkRatCollision() {
 
 function checkSpikeCollision() {
   const TILE_SIZE = 16;
+  const SPIKE_HITBOX_MARGIN = 10; // how much more forgiving the spike collision is vs the visual sprite
   let spikes = LEVELS[currentLevel].spikes || [];
+  let phw = player.hw - SPIKE_HITBOX_MARGIN;
+  let phh = player.hh - SPIKE_HITBOX_MARGIN;
+
   for (let i = 0; i < spikes.length; i++) {
     let s = spikes[i];
     let w = s.tilesW ? s.tilesW * TILE_SIZE : s.w;
@@ -1711,10 +1745,10 @@ function checkSpikeCollision() {
     let top = s.y - SPIKE_H;
     let bottom = s.y;
     if (
-      player.x + player.hw > left &&
-      player.x - player.hw < right &&
-      player.y + player.hh > top &&
-      player.y - player.hh < bottom
+      player.x + phw > left &&
+      player.x - phw < right &&
+      player.y + phh > top &&
+      player.y - phh < bottom
     ) {
       triggerFaint();
       return;
