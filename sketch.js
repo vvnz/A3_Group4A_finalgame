@@ -771,6 +771,7 @@ function preload() {
   soundBGM = loadSound("assets/sounds/bgm.mp3");
   soundSeagulls = loadSound("assets/sounds/seagulls.mp3");
   soundSplash = loadSound("assets/sounds/splash.mp3");
+  preloadEndingAssets();
 
   for (let i = 0; i < LEVELS.length; i++) {
     if (LEVELS[i].background) {
@@ -1543,14 +1544,14 @@ function draw() {
       winDelayTimer--;
       if (winDelayTimer === 0) {
         // Advance to the next level if it's actually been built (has its own
-        // platforms); otherwise show the "level complete" screen. This lets
+        // platforms); otherwise move into the ending scene. This lets
         // Level 1's exit lead into Level 2 while later unbuilt placeholder
-        // levels still fall back to the win screen.
+        // levels still fall through correctly once Level 3 is done.
         let next = LEVELS[currentLevel + 1];
         if (next && next.platforms && next.platforms.length > 0) {
           loadLevel(currentLevel + 1);
         } else {
-          gameState = STATE.WIN;
+          goToEnding();
         }
       }
     }
@@ -1568,6 +1569,8 @@ function draw() {
     endCameraView();
     drawHUD();
     drawLevelBark();
+  } else if (gameState === STATE.ENDING) {
+    drawEndingScreen();
   } else if (gameState === STATE.FAINTING) {
     updateCamera();
     beginCameraView();
@@ -1582,7 +1585,7 @@ function draw() {
     endCameraView();
     drawHUD();
   } else if (gameState === STATE.WIN) {
-    drawWinScreen();
+    goToEnding();
   } else if (gameState === STATE.LOSE) {
     drawLoseScreen();
   }
@@ -1604,8 +1607,14 @@ function loadLevel(index) {
   player.visible = true;
 
   // Support either a single `rat` or a list of `rats` per level.
-  let ratDefs = LEVELS[index].rats || (LEVELS[index].rat ? [LEVELS[index].rat] : []);
-  rats = ratDefs.map((d) => ({ minX: d.minX, maxX: d.maxX, x: d.minX, dir: 1 }));
+  let ratDefs =
+    LEVELS[index].rats || (LEVELS[index].rat ? [LEVELS[index].rat] : []);
+  rats = ratDefs.map((d) => ({
+    minX: d.minX,
+    maxX: d.maxX,
+    x: d.minX,
+    dir: 1,
+  }));
 
   exitDoorOpen = false;
   winDelayTimer = 0;
@@ -2107,12 +2116,19 @@ function drawLoseScreen() {
 }
 
 function keyPressed() {
-  // Checked before everything else (including the dialogue intercept) so it
-  // fires even while dialogue is up. Only active during the intro states.
+  // Ending scene owns its own input (E to grab the helm, Enter to advance
+  // dialogue / move past the outro back to the title). Checked first and
+  // unconditionally so it isn't gated behind the ENTER check below.
+  if (gameState === STATE.ENDING) {
+    if (handleEndingInput(keyCode)) return;
+  }
+
+  // Checked before the dialogue/level-bark intercepts below so it fires
+  // even while dialogue is up. Only active during the intro states.
   if (keyCode === ENTER) {
     // Intro dialogue active? Advance it.
     if (dialogueActive && !dialogueCompleted) {
-      advanceDialogue(); //
+      advanceDialogue();
       return;
     }
 
@@ -2160,7 +2176,7 @@ function keyPressed() {
       if (currentLevel < LEVELS.length - 1) {
         loadLevel(currentLevel + 1);
       } else {
-        gameState = STATE.WIN;
+        goToEnding();
       }
     }
     if (keyCode === 76) {
