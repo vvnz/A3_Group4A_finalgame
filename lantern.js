@@ -22,11 +22,12 @@ const LANTERNS = {
   ],
   2: [
     // Level 3 — wall-hung lanterns (yellow on the sketch / colour map): one
-    // floats just above the spike crossing (top 272), one hangs above the
-    // elevated mid ledge (top 448), one by the bottom-left barrels. See
-    // LEVELS[2] in sketch.js.
+    // floats just above the spike crossing (top 272), one hangs in the
+    // cannon tunnel near the cannon placeholder (CANNONS[2][0] at x904/y424,
+    // see level3extras.js), one by the bottom-left barrels. See LEVELS[2] in
+    // sketch.js.
     { x: 256, y: 232, w: 40, h: 64 },
-    { x: 496, y: 400, w: 40, h: 64 },
+    { x: 910, y: 360, w: 40, h: 64 },
     { x: 160, y: 540, w: 40, h: 64 },
   ], // Level 3
 };
