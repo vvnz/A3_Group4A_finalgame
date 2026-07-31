@@ -526,13 +526,7 @@ const LEVELS = [
       { x: 832, y: CANVAS_HEIGHT - 16, tilesW: 8, tilesH: 1 }, // floor C
 
       // barrels
-      {
-        x: 432,
-        y: 464 - 48, // 3 tiles tall, shifted up to keep it grounded on y:464
-        tilesW: 3,
-        tilesH: 3,
-        barrel: true,
-      },
+
       {
         x: 30,
         y: 498,
@@ -632,8 +626,8 @@ const LEVELS = [
       { minX: 200, maxX: 400 },
       { minX: 520, maxX: 800 },
     ],
-    spawnDoor: { x: 20, y: CANVAS_HEIGHT - 16 - DOOR_H }, // bottom-left, on floor
-    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - 16 - DOOR_H }, // bottom-right
+    spawnDoor: { x: 20, y: CANVAS_HEIGHT - 16 - DOOR_H + 16 }, // bottom-left, on floor
+    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - 16 - DOOR_H + 16 }, // bottom-right
   },
   {
     name: "Level 3",
@@ -698,8 +692,8 @@ const LEVELS = [
     // Level 3 has its own cannon placeholder and two patrolling mice — see
     // level3extras.js (CANNONS[2] / EXTRA_RATS[2]). The single-rat system
     // below (rat/RAT_SPEED/etc.) is left untouched and simply unused here.
-    spawnDoor: { x: 13, y: 448 - DOOR_H }, // on the left spawn ledge (top 448)
-    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - 16 - DOOR_H }, // bottom-right on the floor
+    spawnDoor: { x: 13, y: 448 - DOOR_H + 16 }, // on the left spawn ledge (top 448)
+    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - 16 - DOOR_H + 16 }, // bottom-right on the floor
   },
 ];
 
@@ -1604,8 +1598,14 @@ function loadLevel(index) {
   player.visible = true;
 
   // Support either a single `rat` or a list of `rats` per level.
-  let ratDefs = LEVELS[index].rats || (LEVELS[index].rat ? [LEVELS[index].rat] : []);
-  rats = ratDefs.map((d) => ({ minX: d.minX, maxX: d.maxX, x: d.minX, dir: 1 }));
+  let ratDefs =
+    LEVELS[index].rats || (LEVELS[index].rat ? [LEVELS[index].rat] : []);
+  rats = ratDefs.map((d) => ({
+    minX: d.minX,
+    maxX: d.maxX,
+    x: d.minX,
+    dir: 1,
+  }));
 
   exitDoorOpen = false;
   winDelayTimer = 0;
