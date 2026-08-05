@@ -50,8 +50,8 @@ const EXTRA_RATS = {
   1: [],
   2: [
     // Mouse 1 — patrols the upper-left ledge (LEVELS[2] platform 32..208,
-    // top 320); the double-arrow on the sketch is its patrol span.
-    { minX: 64, maxX: 176, y: 320 - RAT_SIZE / 2 },
+    // top 288); the double-arrow on the sketch is its patrol span.
+    { minX: 64, maxX: 176, y: 288 - RAT_SIZE / 2 },
     // Mouse 2 — patrols the ground floor between the spikes and the exit
     // door; a bit more roam to the left now that the rightmost spike is gone
     // (nearest spike ends at x:512, so it stays well clear).

@@ -651,7 +651,7 @@ const LEVELS = [
 
       // ── LEFT: upper mouse ledge (a mouse patrols along it; the upper
       // lantern hangs on the wall just past its right end). ──
-      { x: 32, y: 320, tilesW: 11, tilesH: 1 }, // 32..208
+      { x: 32, y: 288, tilesW: 11, tilesH: 1 }, // 32..208
 
       // ── LEFT: spawn ledge — the spawn door and the player start sit here. ──
       { x: 0, y: 448, tilesW: 14, tilesH: 1 }, // 0..224, reaches under the pillar to fill the corner
