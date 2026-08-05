@@ -43,6 +43,17 @@ const CANNON_LAG_SPEED_MULTIPLIER = 0.5; // noticeably slow, not crippling
 
 let cannonballs = [];
 
+let imgCannon;
+
+// Wraps sketch.js's preload() the same way debugpanel.js does — this file's
+// own asset load can't run at top level (preload() must call loadImage()),
+// so it's chained onto the existing preload() instead of editing sketch.js.
+const __originalPreloadLevel3Extras = preload;
+preload = function () {
+  __originalPreloadLevel3Extras.apply(this, arguments);
+  imgCannon = loadImage("assets/images/cannon.png");
+};
+
 // Extra rats, keyed by level index. Each patrols minX..maxX at a fixed y
 // (unlike the single official rat, which is always at ground level).
 // Runtime x/dir state is stored directly on each entry.
@@ -169,12 +180,21 @@ function drawExtraRats() {
 function drawCannons() {
   push();
   rectMode(CENTER);
+  imageMode(CENTER);
   for (let c of CANNONS[currentLevel] || []) {
     if (c.placeholder) {
-      // Plain black square placeholder — mechanics ignored for this pass.
-      noStroke();
-      fill(0);
-      rect(c.x, c.y, c.w || 44, c.h || 44);
+      // Real cannon art (assets/images/cannon.png) — mechanics are still
+      // ignored for this pass, this is a visual swap only.
+      if (imgCannon && imgCannon.width > 0) {
+        let h = c.h || 48;
+        let w = h * (imgCannon.width / imgCannon.height);
+        image(imgCannon, c.x, c.y, w, h);
+      } else {
+        // Fallback square while the image is still loading.
+        noStroke();
+        fill(0);
+        rect(c.x, c.y, c.w || 44, c.h || 44);
+      }
       continue;
     }
     stroke(20);
