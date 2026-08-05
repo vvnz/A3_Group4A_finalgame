@@ -89,3 +89,23 @@ function blockMovementIfDark() {
   }
   return false;
 }
+
+const SEASICK_DARK_DECAY = 0.7; // loss per frame while E-lit (dark mode) — faster than the normal recovery-while-still rate
+
+// Overrides sketch.js's updateSeasickness() so dark-mode recovery decays
+// faster, without touching sketch.js. Mirrors that function's logic exactly
+// (isMoving gain, still-decay) — only the darkMode branch's rate changes.
+updateSeasickness = function () {
+  if (darkMode) {
+    player.seasickness = max(player.seasickness - SEASICK_DARK_DECAY, 0);
+  } else if (player.isMoving) {
+    player.seasickness = min(player.seasickness + SEASICK_RATE, SEASICK_MAX);
+  } else {
+    player.seasickness = max(player.seasickness - SEASICK_DECAY, 0);
+  }
+
+  if (player.seasickness >= SEASICK_MAX) {
+    player.seasickness = SEASICK_MAX;
+    triggerFaint();
+  }
+};

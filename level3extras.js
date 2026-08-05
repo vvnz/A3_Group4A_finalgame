@@ -33,6 +33,17 @@ const CANNONS = {
       ballSpeed: 6,
       fireIntervalFrames: 150, // ~2.5s at 60fps
     },
+    // Ground-floor cannon, left of Mouse 2's leftmost patrol point (minX
+    // 700), fires left down the floor.
+    {
+      x: 650,
+      y: 600, // sits on the ground floor (top 624); square is 48px tall
+      w: 48,
+      h: 48,
+      direction: -1,
+      ballSpeed: 6,
+      fireIntervalFrames: 150,
+    },
   ],
 };
 
@@ -120,9 +131,7 @@ function updateCannons() {
     }
   }
   for (let ball of cannonballs) ball.x += ball.vx;
-  cannonballs = cannonballs.filter(
-    (b) => b.x > -50 && b.x < CANVAS_WIDTH + 50,
-  );
+  cannonballs = cannonballs.filter((b) => b.x > -50 && b.x < CANVAS_WIDTH + 50);
 }
 
 function checkExtraRatCollision() {
@@ -188,7 +197,17 @@ function drawCannons() {
     if (imgCannon && imgCannon.width > 0) {
       let h = (c.h || 48) * 1.2;
       let w = h * (imgCannon.width / imgCannon.height);
-      image(imgCannon, c.x, c.y, w, h);
+      // Image faces right by default — mirror horizontally when the
+      // cannon fires left, so the barrel always points the way it shoots.
+      if (c.direction === -1) {
+        push();
+        translate(c.x, c.y);
+        scale(-1, 1);
+        image(imgCannon, 0, 0, w, h);
+        pop();
+      } else {
+        image(imgCannon, c.x, c.y, w, h);
+      }
     } else {
       // Fallback square while the image is still loading.
       rectMode(CENTER);
@@ -251,4 +270,45 @@ handleInput = function () {
   }
   __originalHandleInput.apply(this, arguments);
   player.speed = originalSpeed;
+};
+
+// ── Level 3 tutorial bark: introduces the cannon mechanic ──────────────────
+let level3CannonBarkShown = false;
+
+function resetLevel3Tutorial() {
+  level3CannonBarkShown = false;
+}
+
+// Fires once the player lands on the safe ledge right after the phantom
+// bridge crossing (LEVELS[2] platform at x:704..832, y:272), just before
+// the cannon tunnel.
+function updateLevel3Tutorial() {
+  if (currentLevel !== 2) return;
+  if (level3CannonBarkShown) return;
+
+  let onLandingLedge =
+    player.x > 704 && player.x < 832 && abs(player.y - 272) < 40;
+  if (onLandingLedge) {
+    showLevelBark(
+      "PARROT",
+      "Beware this hunk of metal! Although it won't kill you instantly, you better know how to jump!",
+    );
+    level3CannonBarkShown = true;
+  }
+}
+
+// Wraps updateLevel1Tutorial() (called every PLAYING frame in sketch.js) to
+// also run the Level 3 check, without editing sketch.js's draw() loop.
+const __originalUpdateLevel1Tutorial = updateLevel1Tutorial;
+updateLevel1Tutorial = function () {
+  __originalUpdateLevel1Tutorial.apply(this, arguments);
+  updateLevel3Tutorial();
+};
+
+// Re-arm the one-shot flag on every level (re)load, same as
+// resetLevel3Extras() already does for cannons/rats.
+const __originalResetLevel3Extras = resetLevel3Extras;
+resetLevel3Extras = function () {
+  __originalResetLevel3Extras.apply(this, arguments);
+  resetLevel3Tutorial();
 };
