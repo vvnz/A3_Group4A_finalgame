@@ -651,7 +651,7 @@ const LEVELS = [
 
       // ── LEFT: upper mouse ledge (a mouse patrols along it; the upper
       // lantern hangs on the wall just past its right end). ──
-      { x: 32, y: 288, tilesW: 11, tilesH: 1 }, // 32..208
+      { x: 0, y: 288, tilesW: 11, tilesH: 1 }, // 0..176
 
       // ── LEFT: spawn ledge — the spawn door and the player start sit here. ──
       { x: 0, y: 448, tilesW: 14, tilesH: 1 }, // 0..224, reaches under the pillar to fill the corner
@@ -659,9 +659,9 @@ const LEVELS = [
       // ── LEFT: the lamp's step (right half kept) plus two vertical pillars
       // that connect it, edge-to-edge, down to the spawn ledge and up to the
       // spike crossing. The upper lantern rests on the step. ──
-      { x: 208, y: 400, tilesW: 4, tilesH: 1 }, // step tread (208..272), lowered so it's reachable
-      { x: 208, y: 400, tilesW: 1, tilesH: 3 }, // pillar down to the spawn ledge (y400..448)
-      { x: 272, y: 272, tilesW: 1, tilesH: 9 }, // pillar up into the crossing (y272..416, meets the tread bottom)
+      { x: 176, y: 368, tilesW: 6, tilesH: 1 }, // step tread (176..272), raised 32px from y:400 but still within jump range of the spawn ledge (y448 top, ~80px rise vs. a ~84px max jump)
+      { x: 176, y: 384, tilesW: 1, tilesH: 4 }, // pillar down to the spawn ledge (y384..448), stretched to stay flush with the raised tread
+      { x: 272, y: 272, tilesW: 1, tilesH: 7 }, // pillar up into the crossing (y272..384), shortened to stay flush with the raised tread bottom
 
       // ── MID: elevated ledge, aligned with the rest of the y:448 floor.
       // Spans to x:576 so it meets the cannon tunnel with no gap. The lower
