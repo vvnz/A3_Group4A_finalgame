@@ -627,7 +627,10 @@ const LEVELS = [
       { minX: 520, maxX: 800 },
     ],
     spawnDoor: { x: 20, y: CANVAS_HEIGHT - 16 - DOOR_H + 16 }, // bottom-left, on floor
-    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - 16 - DOOR_H + 16 }, // bottom-right
+    exitDoor: {
+      x: CANVAS_WIDTH - DOOR_W - 20,
+      y: CANVAS_HEIGHT - 16 - DOOR_H + 16,
+    }, // bottom-right
   },
   {
     name: "Level 3",
@@ -693,7 +696,10 @@ const LEVELS = [
     // level3extras.js (CANNONS[2] / EXTRA_RATS[2]). The single-rat system
     // below (rat/RAT_SPEED/etc.) is left untouched and simply unused here.
     spawnDoor: { x: 13, y: 448 - DOOR_H + 16 }, // on the left spawn ledge (top 448)
-    exitDoor: { x: CANVAS_WIDTH - DOOR_W - 20, y: CANVAS_HEIGHT - 16 - DOOR_H + 16 }, // bottom-right on the floor
+    exitDoor: {
+      x: CANVAS_WIDTH - DOOR_W - 20,
+      y: CANVAS_HEIGHT - 16 - DOOR_H + 16,
+    }, // bottom-right on the floor
   },
 ];
 
