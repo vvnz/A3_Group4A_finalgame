@@ -653,8 +653,11 @@ const LEVELS = [
       // lantern hangs on the wall just past its right end). ──
       { x: 0, y: 288, tilesW: 11, tilesH: 1 }, // 0..176
 
-      // ── LEFT: spawn ledge — the spawn door and the player start sit here. ──
-      { x: 0, y: 448, tilesW: 14, tilesH: 1 }, // 0..224, reaches under the pillar to fill the corner
+      // ── LEFT: spawn ledge — the spawn door and the player start sit here.
+      // Extended to x:272 (flush with the up-pillar) to give the relocated
+      // cannon placeholder (level3extras.js CANNONS[2][0]) solid ground to
+      // sit on in the corner next to the pillar. ──
+      { x: 0, y: 448, tilesW: 17, tilesH: 1 }, // 0..272, reaches under the pillar to fill the corner
 
       // ── LEFT: the lamp's step (right half kept) plus two vertical pillars
       // that connect it, edge-to-edge, down to the spawn ledge and up to the

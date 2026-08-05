@@ -21,12 +21,13 @@ const CANNONS = {
   0: [],
   1: [],
   2: [
-    // For this pass the cannon is a static BLACK SQUARE placeholder at the
-    // right end of the tunnel floor (LEVELS[2], top 448) — mechanics are
-    // intentionally not wired up. `placeholder: true` skips all firing.
+    // For this pass the cannon is a static BLACK SQUARE placeholder, tucked
+    // into the left corner formed by the spawn ledge and the pillar base
+    // (LEVELS[2], top 448) — mechanics are intentionally not wired up.
+    // `placeholder: true` skips all firing.
     {
-      x: 904,
-      y: 424, // sits on the tunnel floor (top 448); square is 48px tall
+      x: 224,
+      y: 424, // sits on the spawn ledge (top 448); square is 48px tall
       w: 48,
       h: 48,
       placeholder: true,
@@ -49,9 +50,9 @@ const EXTRA_RATS = {
   0: [],
   1: [],
   2: [
-    // Mouse 1 — patrols the upper-left ledge (LEVELS[2] platform 32..208,
+    // Mouse 1 — patrols the upper-left ledge (LEVELS[2] platform 0..176,
     // top 288); the double-arrow on the sketch is its patrol span.
-    { minX: 64, maxX: 176, y: 288 - RAT_SIZE / 2 },
+    { minX: 32, maxX: 144, y: 288 - RAT_SIZE / 2 },
     // Mouse 2 — patrols the ground floor between the spikes and the exit
     // door; a bit more roam to the left now that the rightmost spike is gone
     // (nearest spike ends at x:512, so it stays well clear).
