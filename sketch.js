@@ -803,6 +803,7 @@ function setup() {
 function updateSounds() {
   if (soundSeagulls?.isPlaying()) soundSeagulls.stop();
   if (soundBGM?.isPlaying()) soundBGM.stop();
+  if (soundSiren?.isPlaying()) soundSiren.stop();
 
   if (gameState === STATE.START) {
     // Seagulls play during the intro / tutorial while the player is
