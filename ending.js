@@ -55,7 +55,10 @@ const ENDING_DIALOGUE = [
     speaker: "PLAYER",
     text: "Where'd the rest of the crew even go? Actually — don't answer that.",
   },
-  { speaker: "PARROT", text: "Sirens, mate. Real lovely singers. Terrible life choices." },
+  {
+    speaker: "PARROT",
+    text: "Sirens, mate. Real lovely singers. Terrible life choices.",
+  },
   {
     speaker: "PARROT",
     text: "Reckon they're harmonizin' at the bottom of the sea as we speak.",
@@ -69,8 +72,14 @@ const ENDING_DIALOGUE = [
     speaker: "DIALOGUE",
     text: "The player grips the wheel, knuckles white, and holds the course.",
   },
-  { speaker: "PARROT", text: "...huh. Look at that. Steady hands. Wobbly legs." },
-  { speaker: "PARROT", text: "Good job, pirate. You've **earned your sea legs**." },
+  {
+    speaker: "PARROT",
+    text: "...huh. Look at that. Steady hands. Wobbly legs.",
+  },
+  {
+    speaker: "PARROT",
+    text: "Good job, pirate. You've **earned your sea legs**.",
+  },
   { speaker: "PLAYER", text: "Only took nearly drowning three times." },
   { speaker: "PARROT", text: "Four, if you count the barrel." },
   { speaker: "PLAYER", text: "I don't." },
@@ -432,7 +441,13 @@ function drawEndingScreen() {
   }
 
   if (waitingForHelmGrab) {
-    drawInteractionPrompt(ENDING_HELM_PROMPT.x, ENDING_HELM_PROMPT.y);
+    drawInteractionPrompt(
+      ENDING_HELM_PROMPT.x,
+      ENDING_HELM_PROMPT.y,
+      20,
+      180,
+      24,
+    );
   }
 
   if (endingDialogueActive) {

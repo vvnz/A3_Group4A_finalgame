@@ -145,6 +145,11 @@ const DOOR_H = 90;
 // spike hazard dimensions
 const SPIKE_W = 16;
 const SPIKE_H = 16;
+// Narrower than player.hw/hh — spikes only care about foot-width, not the
+// full sprite bounding box (hat/shoulders), so this hitbox is scoped to
+// checkSpikeCollision() only and doesn't affect platforms/doors/rats.
+const SPIKE_HITBOX_HW = 10; // half-width, tune to match visible leg width
+const SPIKE_HITBOX_HH = 28; // keep vertical reach as-is for now
 
 // rat enemy
 const RAT_SPEED = 2.4; // patrol speed in pixels per frame — adjust to taste
@@ -651,13 +656,13 @@ const LEVELS = [
 
       // ── LEFT: upper mouse ledge (a mouse patrols along it; the upper
       // lantern hangs on the wall just past its right end). ──
-      { x: 0, y: 288, tilesW: 11, tilesH: 1 }, // 0..176
+      { x: 0, y: 288, tilesW: 12, tilesH: 1 }, // 0..192 (extended 1 tile / 16px)
 
       // ── LEFT: spawn ledge — the spawn door and the player start sit here.
       // Extended to x:272 (flush with the up-pillar) to give the relocated
       // cannon placeholder (level3extras.js CANNONS[2][0]) solid ground to
       // sit on in the corner next to the pillar. ──
-      { x: 0, y: 448, tilesW: 17, tilesH: 1 }, // 0..272, reaches under the pillar to fill the corner
+      { x: 0, y: 448, tilesW: 18, tilesH: 1 }, // 0..272, reaches under the pillar to fill the corner
 
       // ── LEFT: the lamp's step (right half kept) plus two vertical pillars
       // that connect it, edge-to-edge, down to the spawn ledge and up to the
@@ -690,8 +695,6 @@ const LEVELS = [
     ],
     spikes: [
       { x: 336, y: 272, tilesW: 23 }, // the long top-mid crossing (first 3 spikes removed)
-      { x: 336, y: CANVAS_HEIGHT - 16, tilesW: 1 }, // two single spikes on the
-      { x: 496, y: CANVAS_HEIGHT - 16, tilesW: 1 }, // ground floor, easily cleared
     ],
     // Level 3 has its own cannon placeholder and two patrolling mice — see
     // level3extras.js (CANNONS[2] / EXTRA_RATS[2]). The single-rat system
@@ -747,6 +750,7 @@ let imgSign;
 let soundBGM;
 let soundSeagulls;
 let soundSplash;
+let soundSiren;
 let exitDoorOpen = false;
 let introDoorOpen = false;
 let winDelayTimer = 0;
@@ -772,6 +776,7 @@ function preload() {
   soundBGM = loadSound("assets/sounds/bgm.mp3");
   soundSeagulls = loadSound("assets/sounds/seagulls.mp3");
   soundSplash = loadSound("assets/sounds/splash.mp3");
+  soundSiren = loadSound("assets/sounds/sirens.mp3");
   preloadEndingAssets();
 
   for (let i = 0; i < LEVELS.length; i++) {
@@ -1180,6 +1185,8 @@ function startDialogue(lines) {
     screenShakeIntensity = 8;
     screenShakeTimer = 30;
     soundSplash.play();
+  } else if (line.text.startsWith("♪ Harmonious singing")) {
+    soundSiren.play();
   }
 }
 
@@ -1229,6 +1236,8 @@ function advanceDialogue() {
         screenShakeIntensity = 8;
         screenShakeTimer = 30;
         soundSplash.play();
+      } else if (nextLine.text.startsWith("♪ Harmonious singing")) {
+        soundSiren.play();
       }
     }
   }
@@ -1737,10 +1746,10 @@ function checkRatCollision() {
 function checkSpikeCollision() {
   const TILE_SIZE = 16;
   let spikes = LEVELS[currentLevel].spikes || [];
-  let pl = player.x - player.hw;
-  let pr = player.x + player.hw;
-  let pt = player.y - player.hh;
-  let pb = player.y + player.hh;
+  let pl = player.x - SPIKE_HITBOX_HW;
+  let pr = player.x + SPIKE_HITBOX_HW;
+  let pt = player.y - SPIKE_HITBOX_HH;
+  let pb = player.y + SPIKE_HITBOX_HH;
   for (let i = 0; i < spikes.length; i++) {
     let s = spikes[i];
     let w = s.tilesW ? s.tilesW * TILE_SIZE : s.w;
@@ -1949,20 +1958,19 @@ function drawDoors() {
   pop();
 }
 
-function drawInteractionPrompt(x, y) {
-  const radius = 12;
+function drawInteractionPrompt(x, y, radius = 12, alpha = 80, txtSize = 16) {
   push();
   // White circle
-  fill(255, 255, 255, 80);
+  fill(255, 255, 255, alpha);
   noStroke();
   circle(x, y, radius * 2);
 
   // Black E
   fill(0);
-  textSize(16);
+  textSize(txtSize);
   textAlign(CENTER, TOP);
   textStyle(BOLD);
-  text("E", x, y - 7);
+  text("E", x, y - txtSize / 2 + 1);
   pop();
 }
 
