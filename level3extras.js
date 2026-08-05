@@ -21,16 +21,17 @@ const CANNONS = {
   0: [],
   1: [],
   2: [
-    // For this pass the cannon is a static BLACK SQUARE placeholder, tucked
-    // into the left corner formed by the spawn ledge and the pillar base
-    // (LEVELS[2], top 448) — mechanics are intentionally not wired up.
-    // `placeholder: true` skips all firing.
+    // Tucked into the left corner formed by the spawn ledge and the pillar
+    // base (LEVELS[2], top 448). Fires right (direction: 1) down the
+    // corridor at a steady interval.
     {
       x: 224,
       y: 424, // sits on the spawn ledge (top 448); square is 48px tall
       w: 48,
       h: 48,
-      placeholder: true,
+      direction: 1,
+      ballSpeed: 6,
+      fireIntervalFrames: 150, // ~2.5s at 60fps
     },
   ],
 };
@@ -103,13 +104,16 @@ function updateExtraRats() {
 
 function updateCannons() {
   for (let c of CANNONS[currentLevel] || []) {
-    if (c.placeholder) continue; // static black square — no firing
     c.timer = (c.timer || 0) + 1;
     if (c.timer >= c.fireIntervalFrames) {
       c.timer = 0;
+      // Spawn from the muzzle — the barrel's open end, roughly the upper
+      // half of the sprite — not the cannon's own center point.
+      let muzzleX = c.x + c.direction * ((c.w || 48) / 2);
+      let muzzleY = c.y - (c.h || 48) * 0.15;
       cannonballs.push({
-        x: c.x,
-        y: c.y,
+        x: muzzleX,
+        y: muzzleY,
         vx: c.direction * c.ballSpeed,
         r: CANNON_BALL_RADIUS,
       });
@@ -179,39 +183,28 @@ function drawExtraRats() {
 
 function drawCannons() {
   push();
-  rectMode(CENTER);
   imageMode(CENTER);
   for (let c of CANNONS[currentLevel] || []) {
-    if (c.placeholder) {
-      // Real cannon art (assets/images/cannon.png) — mechanics are still
-      // ignored for this pass, this is a visual swap only.
-      if (imgCannon && imgCannon.width > 0) {
-        let h = (c.h || 48) * 1.2;
-        let w = h * (imgCannon.width / imgCannon.height);
-        image(imgCannon, c.x, c.y, w, h);
-      } else {
-        // Fallback square while the image is still loading.
-        noStroke();
-        fill(0);
-        rect(c.x, c.y, c.w || 44, c.h || 44);
-      }
-      continue;
+    if (imgCannon && imgCannon.width > 0) {
+      let h = (c.h || 48) * 1.2;
+      let w = h * (imgCannon.width / imgCannon.height);
+      image(imgCannon, c.x, c.y, w, h);
+    } else {
+      // Fallback square while the image is still loading.
+      rectMode(CENTER);
+      noStroke();
+      fill(0);
+      rect(c.x, c.y, c.w || 44, c.h || 44);
     }
-    stroke(20);
-    strokeWeight(2);
-    fill(60);
-    rect(c.x, c.y, 44, 20, 4); // barrel body
-    noStroke();
-    fill(30);
-    circle(c.x + c.direction * 24, c.y, 16); // muzzle end
   }
   pop();
 }
 
 function drawCannonballs() {
   push();
-  noStroke();
-  fill(20);
+  stroke(70);
+  strokeWeight(1);
+  fill(160);
   for (let ball of cannonballs) circle(ball.x, ball.y, ball.r * 2);
   pop();
 }
