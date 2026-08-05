@@ -31,7 +31,7 @@ STATE.ENDING = "ending";
 let imgEndingBg;
 
 function preloadEndingAssets() {
-  imgEndingBg = loadImage("assets/images/ship-front.png");
+  imgEndingBg = loadImage("assets/images/background_ending.png");
 }
 
 // ── Ending dialogue lines ───────────────────────────────────────────────
