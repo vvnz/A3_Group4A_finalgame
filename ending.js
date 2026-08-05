@@ -11,7 +11,11 @@
 //   getWrappedDialogueLines(line), currentDialogueImage(speaker),
 //   wrapTextForDialogue(), parseStyledSegments(), drawStyledLine(),
 //   drawInteractionPrompt(x, y), screenShakeIntensity / screenShakeTimer,
-//   DIALOGUE_FRAMES_PER_CHAR, STATE, gameState, goToSplash()
+//   DIALOGUE_FRAMES_PER_CHAR, STATE, gameState, goToSplash(), imgLogo
+//
+// The end-of-scene restart panel also reuses imgDebugPanel (debugpanel.js)
+// for its wood-panel art, and defines its own mousePressed() — the game
+// has no other one, so this doesn't need wiring into sketch.js either.
 //
 // See the "HOOKING THIS INTO sketch.js" block at the bottom of this file
 // for the exact edits needed in sketch.js + index.html.
@@ -22,12 +26,8 @@
 STATE.ENDING = "ending";
 
 // ── Assets ───────────────────────────────────────────────────────────────
-// No dedicated ending background — reuses imgIntroBg (loaded in sketch.js's
-// preload()) so the ending scene is visually the same ship deck the intro
-// opened on. Swap drawEndingScreen()'s image() call below if/when you want
-// a distinct piece of art for this scene instead.
-// ── Assets ───────────────────────────────────────────────────────────────
-// Dedicated ending background — the ship-front art, distinct from imgIntroBg.
+// Dedicated ending background (the ship's helm, looking out at the rocks)
+// — distinct art from imgIntroBg, which is the intro's own ship-deck view.
 let imgEndingBg;
 
 function preloadEndingAssets() {
@@ -42,39 +42,38 @@ function preloadEndingAssets() {
 const ENDING_DIALOGUE = [
   {
     speaker: "DIALOGUE",
-    text: "The player emerges into the sun, hastily scanning their surroundings.",
+    text: "The ship lurches — then, at last, the swells begin to settle.",
   },
   {
     speaker: "DIALOGUE",
-    text: "The ship groans as it scrapes past the rocks, close enough to touch.",
+    text: "*CREAK* The hull scrapes past the last of the rocks, close enough to touch.",
     shake: true,
   },
-  { speaker: "PLAYER", text: "C'mon, c'mon—" },
-  { speaker: "DIALOGUE", text: "You pull with all your might." },
-  { speaker: "DIALOGUE", text: "*CREAK* The ship swings back on course." },
-  { speaker: "PARROT", text: "*CAW* ...huh. Look at that." },
-  { speaker: "PLAYER", text: "We're not dead! I did it!" },
-  { speaker: "PLAYER", text: "But..." },
-  { speaker: "PLAYER", text: "Where's the rest of my crew?" },
-  { speaker: "PARROT", text: "..." },
-  { speaker: "PLAYER", text: "What am I supposed to do now? It's just... me." },
+  { speaker: "PLAYER", text: "Phew! ...phew. Okay. We're alive. _I'm_ alive." },
+  { speaker: "PARROT", text: "*CAW* Don't sound so surprised." },
   {
-    speaker: "PARROT",
-    text: "Same thing you've been doing, bucket. Keep on moving, little by little.",
+    speaker: "PLAYER",
+    text: "Where'd the rest of the crew even go? Actually — don't answer that.",
   },
+  { speaker: "PARROT", text: "Sirens, mate. Real lovely singers. Terrible life choices." },
   {
     speaker: "PARROT",
-    text: "Doesn't mean the floor stops moving. Just means you stop falling over when it does.",
+    text: "Reckon they're harmonizin' at the bottom of the sea as we speak.",
+  },
+  { speaker: "PLAYER", text: "That's bleak. Thanks for that." },
+  {
+    speaker: "PARROT",
+    text: "Anytime. Now quit yer moping and steer this beauty to safety.",
   },
   {
     speaker: "DIALOGUE",
-    text: "The player settles at the helm. The horizon still sways — gentler now.",
+    text: "The player grips the wheel, knuckles white, and holds the course.",
   },
-  {
-    speaker: "PARROT",
-    text: "*ruffles feathers* ...not gonna lie though. Feeling a little off myself.",
-  },
-  { speaker: "PLAYER", text: "Welcome to the club." },
+  { speaker: "PARROT", text: "...huh. Look at that. Steady hands. Wobbly legs." },
+  { speaker: "PARROT", text: "Good job, pirate. You've **earned your sea legs**." },
+  { speaker: "PLAYER", text: "Only took nearly drowning three times." },
+  { speaker: "PARROT", text: "Four, if you count the barrel." },
+  { speaker: "PLAYER", text: "I don't." },
 ];
 
 // The sequence pauses right after this line (index into ENDING_DIALOGUE,
@@ -83,9 +82,9 @@ const ENDING_DIALOGUE = [
 const HELM_GRAB_AFTER_INDEX = 1; // after "...close enough to touch."
 
 // Fixed SCREEN-space point (not world-space — this scene never moves a
-// camera) where the "Press E" prompt floats. Eyeball this once the real
-// background is in and move it to sit over the helm art.
-const ENDING_HELM_PROMPT = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 + 40 };
+// camera) where the "Press E" prompt floats — sits over the ship's wheel
+// in background_ending.png.
+const ENDING_HELM_PROMPT = { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 + 100 };
 
 // Persistent gentle sway that kicks in once the helm's been grabbed —
 // smaller/calmer than the seasickness wobble tiers in sketch.js, so it
@@ -104,6 +103,14 @@ let waitingForHelmGrab = false;
 let helmGrabbed = false;
 let endingOutroAlpha = 0;
 
+// The restart panel that fades in once the outro overlay is dark enough.
+// restartButtonBounds is recomputed every frame the panel is drawn (its
+// size depends on the loaded image's aspect ratio) and read back by
+// mousePressed() for the click hit-test.
+let restartPanelAlpha = 0;
+let restartButtonBounds = null;
+let restartButtonHovered = false;
+
 function initEndingScene() {
   endingDialogueActive = false;
   endingDialogueCompleted = false;
@@ -114,6 +121,8 @@ function initEndingScene() {
   waitingForHelmGrab = false;
   helmGrabbed = false;
   endingOutroAlpha = 0;
+  restartPanelAlpha = 0;
+  restartButtonBounds = null;
   screenShakeIntensity = 0;
   screenShakeTimer = 0;
 }
@@ -309,8 +318,11 @@ function drawEndingDialogueBox() {
   }
 }
 
-// "THE END" card that fades in once the last line's been read, with a
-// prompt back to the title screen.
+// Dims the scene, then brings in a wooden panel (debug_panel.png — same
+// art the debug overlay uses) with the game's logo and a "Click to play
+// again" button the player can actually click, restarting via the same
+// goToSplash() the ENTER shortcut already used. ENTER still works too
+// (handleEndingInput), this just adds a visible, mouse-driven affordance.
 function drawEndingOutro() {
   endingOutroAlpha = min(endingOutroAlpha + 3, 220);
 
@@ -318,21 +330,66 @@ function drawEndingOutro() {
   noStroke();
   fill(0, endingOutroAlpha);
   rect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  pop();
 
-  if (endingOutroAlpha > 120) {
-    textAlign(CENTER, CENTER);
-    textFont("Pixelify Sans");
-    textSize(48);
-    fill(255, endingOutroAlpha);
-    text("THE END", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 20);
+  if (endingOutroAlpha < 220) return; // wait for the dim to finish first
 
-    textSize(18);
-    text(
-      "Press ENTER to return to the title screen",
-      CANVAS_WIDTH / 2,
-      CANVAS_HEIGHT / 2 + 40,
-    );
+  if (!imgDebugPanel || imgDebugPanel.width === 0 || !imgLogo) {
+    restartButtonBounds = null;
+    return; // still loading
   }
+
+  restartPanelAlpha = min(restartPanelAlpha + 8, 255);
+
+  let panelW = 520;
+  let panelH = panelW * (imgDebugPanel.height / imgDebugPanel.width);
+  let panelX = (CANVAS_WIDTH - panelW) / 2;
+  let panelY = (CANVAS_HEIGHT - panelH) / 2;
+  let centerX = panelX + panelW / 2;
+
+  push();
+  tint(255, restartPanelAlpha);
+  imageMode(CORNER);
+  image(imgDebugPanel, panelX, panelY, panelW, panelH);
+
+  let logoW = panelW * 0.62;
+  let logoH = logoW * (imgLogo.height / imgLogo.width);
+  imageMode(CENTER);
+  image(imgLogo, centerX, panelY + panelH * 0.34, logoW, logoH);
+  pop();
+
+  // Button — a rounded, stylized wood-toned rect (not another image) so it
+  // reads as an actual button rather than more panel art.
+  let btnW = panelW * 0.62;
+  let btnH = 56;
+  let btnX = centerX - btnW / 2;
+  let btnY = panelY + panelH * 0.68;
+  restartButtonBounds = { x: btnX, y: btnY, w: btnW, h: btnH };
+
+  restartButtonHovered =
+    restartPanelAlpha >= 255 &&
+    mouseX > btnX &&
+    mouseX < btnX + btnW &&
+    mouseY > btnY &&
+    mouseY < btnY + btnH;
+
+  push();
+  translate(0, 0);
+  let a = restartPanelAlpha;
+  rectMode(CORNER);
+  strokeWeight(4);
+  stroke(230, 170, 90, a);
+  fill(restartButtonHovered ? 70 : 45, restartButtonHovered ? 45 : 28, 30, a);
+  rect(btnX, btnY, btnW, btnH, 10);
+
+  textAlign(CENTER, CENTER);
+  textFont("Pixelify Sans");
+  textStyle(BOLD);
+  textSize(restartButtonHovered ? 23 : 22);
+  strokeWeight(4);
+  stroke(40, 25, 15, a);
+  fill(255, a);
+  text("Click to play again", centerX, btnY + btnH / 2 + 2);
   pop();
 }
 
@@ -362,7 +419,7 @@ function drawEndingScreen() {
   push();
   translate(shakeX + swayX, shakeY + swayY);
   imageMode(CORNER);
-  image(imgIntroBg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  image(imgEndingBg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   pop();
 
   // Kick off dialogue on the first frame of this state.
@@ -406,6 +463,23 @@ function handleEndingInput(keyCode) {
     }
   }
   return false;
+}
+
+// p5 calls this automatically (global mode) — no wiring needed in sketch.js
+// or index.html, unlike keyPressed() which sketch.js already defines.
+function mousePressed() {
+  if (
+    gameState === STATE.ENDING &&
+    endingDialogueCompleted &&
+    restartButtonBounds &&
+    restartPanelAlpha >= 255 &&
+    mouseX > restartButtonBounds.x &&
+    mouseX < restartButtonBounds.x + restartButtonBounds.w &&
+    mouseY > restartButtonBounds.y &&
+    mouseY < restartButtonBounds.y + restartButtonBounds.h
+  ) {
+    goToSplash();
+  }
 }
 
 // ============================================================
