@@ -579,7 +579,6 @@ const LEVELS = [
 
       // ── World frame ──
       { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 }, // ground floor (624)
-      { x: 0, y: 64, tilesW: 60, tilesH: 1 }, // top ceiling band
       // (No top-right ledge — it let the player walk over and skip the spikes.)
 
       // ── Central dividing wall (blocks the floor; cross over the top) ──
@@ -588,10 +587,10 @@ const LEVELS = [
       { x: 816, y: 304, tilesW: 5, tilesH: 1 }, // safe landing (816-896); ends just past the lantern so the player drops through the cutaway after it
 
       // ── LEFT region: staircase up to the top-left lantern & crossing ──
-      // NOTE: the second step (x:224,y:464) is a PHANTOM (PHANTOMS[1]) — the
-      // climb is gated on timing it, so it isn't listed here.
+      // NOTE: the y:384 step is a PHANTOM (PHANTOMS[1]) — the climb is gated
+      // on timing it, so it isn't listed here.
       { x: 96, y: 544, tilesW: 6, tilesH: 1 },
-      { x: 64, y: 384, tilesW: 7, tilesH: 1 },
+      { x: 224, y: 464, tilesW: 6, tilesH: 1 }, // now a solid step
       { x: 200, y: 304, tilesW: 8, tilesH: 1 }, // under the top-left lantern
       { x: 336, y: 544, tilesW: 7, tilesH: 1 }, // low ledge near the wall base
 
@@ -649,7 +648,6 @@ const LEVELS = [
     platforms: [
       // ── World frame ──
       { x: 0, y: CANVAS_HEIGHT - 16, tilesW: 60, tilesH: 1 }, // ground floor (624)
-      { x: 0, y: 64, tilesW: 60, tilesH: 1 }, // top ceiling band (decorative)
 
       // ── LEFT: upper mouse ledge (a mouse patrols along it; the upper
       // lantern hangs on the wall just past its right end). ──
@@ -688,7 +686,7 @@ const LEVELS = [
       { x: 56, y: CANVAS_HEIGHT - 16 - 96, tilesW: 3, tilesH: 3, barrel: true },
     ],
     spikes: [
-      { x: 288, y: 272, tilesW: 26 }, // the long top-mid crossing
+      { x: 336, y: 272, tilesW: 23 }, // the long top-mid crossing (first 3 spikes removed)
       { x: 336, y: CANVAS_HEIGHT - 16, tilesW: 1 }, // two single spikes on the
       { x: 496, y: CANVAS_HEIGHT - 16, tilesW: 1 }, // ground floor, easily cleared
     ],
@@ -771,6 +769,7 @@ function preload() {
   soundBGM = loadSound("assets/sounds/bgm.mp3");
   soundSeagulls = loadSound("assets/sounds/seagulls.mp3");
   soundSplash = loadSound("assets/sounds/splash.mp3");
+  preloadEndingAssets();
 
   for (let i = 0; i < LEVELS.length; i++) {
     if (LEVELS[i].background) {
@@ -1543,14 +1542,14 @@ function draw() {
       winDelayTimer--;
       if (winDelayTimer === 0) {
         // Advance to the next level if it's actually been built (has its own
-        // platforms); otherwise show the "level complete" screen. This lets
+        // platforms); otherwise move into the ending scene. This lets
         // Level 1's exit lead into Level 2 while later unbuilt placeholder
-        // levels still fall back to the win screen.
+        // levels still fall through correctly once Level 3 is done.
         let next = LEVELS[currentLevel + 1];
         if (next && next.platforms && next.platforms.length > 0) {
           loadLevel(currentLevel + 1);
         } else {
-          gameState = STATE.WIN;
+          goToEnding();
         }
       }
     }
@@ -1568,6 +1567,8 @@ function draw() {
     endCameraView();
     drawHUD();
     drawLevelBark();
+  } else if (gameState === STATE.ENDING) {
+    drawEndingScreen();
   } else if (gameState === STATE.FAINTING) {
     updateCamera();
     beginCameraView();
@@ -1582,7 +1583,7 @@ function draw() {
     endCameraView();
     drawHUD();
   } else if (gameState === STATE.WIN) {
-    drawWinScreen();
+    goToEnding();
   } else if (gameState === STATE.LOSE) {
     drawLoseScreen();
   }
@@ -1733,21 +1734,34 @@ function checkRatCollision() {
 function checkSpikeCollision() {
   const TILE_SIZE = 16;
   let spikes = LEVELS[currentLevel].spikes || [];
+  let pl = player.x - player.hw;
+  let pr = player.x + player.hw;
+  let pt = player.y - player.hh;
+  let pb = player.y + player.hh;
   for (let i = 0; i < spikes.length; i++) {
     let s = spikes[i];
     let w = s.tilesW ? s.tilesW * TILE_SIZE : s.w;
-    let left = s.x;
-    let right = s.x + w;
-    let top = s.y - SPIKE_H;
-    let bottom = s.y;
-    if (
-      player.x + player.hw > left &&
-      player.x - player.hw < right &&
-      player.y + player.hh > top &&
-      player.y - player.hh < bottom
-    ) {
-      triggerFaint();
-      return;
+    // Test each individual triangle rather than the group's bounding box, so
+    // the hitbox follows the spikes' actual triangular shape (base at s.y,
+    // apex SPIKE_H above at the tile centre) instead of a rectangle.
+    let count = floor(w / SPIKE_W);
+    for (let j = 0; j < count; j++) {
+      let lx = s.x + j * SPIKE_W;
+      let cx = lx + SPIKE_W / 2;
+
+      // Vertical overlap between the player box and this triangle.
+      let overlapTop = max(pt, s.y - SPIKE_H);
+      let overlapBottom = min(pb, s.y);
+      if (overlapTop > overlapBottom) continue;
+
+      // The triangle is widest at its base and tapers to a point at the top,
+      // so its widest slice within the overlap is at the lowest shared y.
+      let h = s.y - overlapBottom; // height above the base (0..SPIKE_H)
+      let halfW = (SPIKE_W / 2) * (1 - h / SPIKE_H);
+      if (pr > cx - halfW && pl < cx + halfW) {
+        triggerFaint();
+        return;
+      }
     }
   }
 }
@@ -2113,12 +2127,19 @@ function drawLoseScreen() {
 }
 
 function keyPressed() {
-  // Checked before everything else (including the dialogue intercept) so it
-  // fires even while dialogue is up. Only active during the intro states.
+  // Ending scene owns its own input (E to grab the helm, Enter to advance
+  // dialogue / move past the outro back to the title). Checked first and
+  // unconditionally so it isn't gated behind the ENTER check below.
+  if (gameState === STATE.ENDING) {
+    if (handleEndingInput(keyCode)) return;
+  }
+
+  // Checked before the dialogue/level-bark intercepts below so it fires
+  // even while dialogue is up. Only active during the intro states.
   if (keyCode === ENTER) {
     // Intro dialogue active? Advance it.
     if (dialogueActive && !dialogueCompleted) {
-      advanceDialogue(); //
+      advanceDialogue();
       return;
     }
 
@@ -2166,7 +2187,7 @@ function keyPressed() {
       if (currentLevel < LEVELS.length - 1) {
         loadLevel(currentLevel + 1);
       } else {
-        gameState = STATE.WIN;
+        goToEnding();
       }
     }
     if (keyCode === 76) {

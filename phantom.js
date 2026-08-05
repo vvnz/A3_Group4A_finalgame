@@ -24,9 +24,8 @@ const PHANTOMS = {
     // 16px-tall block.
     // Top-center: the gate across the top of the dividing wall.
     { x: 336, y: 224, tilesW: 7, tilesH: 1, phase: 0 },
-    // Second step of the LEFT climb — must be timed to ascend (was a regular
-    // platform; the old left-mid phantom beside it was skippable and removed).
-    { x: 224, y: 464, tilesW: 6, tilesH: 1, phase: 0.34 },
+    // Step of the LEFT climb — must be timed to ascend.
+    { x: 64, y: 384, tilesW: 7, tilesH: 1, phase: 0.34 },
     // Right-low: bonus ledge in the right region.
     { x: 648, y: 464, tilesW: 7, tilesH: 1, phase: 0.67 },
   ],
