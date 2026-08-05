@@ -186,7 +186,7 @@ function drawCannons() {
       // Real cannon art (assets/images/cannon.png) — mechanics are still
       // ignored for this pass, this is a visual swap only.
       if (imgCannon && imgCannon.width > 0) {
-        let h = c.h || 48;
+        let h = (c.h || 48) * 1.2;
         let w = h * (imgCannon.width / imgCannon.height);
         image(imgCannon, c.x, c.y, w, h);
       } else {
